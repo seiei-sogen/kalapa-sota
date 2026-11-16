@@ -9,7 +9,8 @@ pub fn read_local_branches(repository_path: &Path) -> Result<Vec<LocalBranch>, G
         repository_path,
         &[
             "for-each-ref",
-            "--format=%(HEAD)%1f%(objectname)%1f%(refname:short)",
+            // refname:short は同名のタグがあると "heads/名前" を返し、git switch が受け付けない。
+            "--format=%(HEAD)%1f%(objectname)%1f%(refname:lstrip=2)",
             "refs/heads",
         ],
     )?;

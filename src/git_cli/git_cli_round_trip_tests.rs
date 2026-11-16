@@ -35,6 +35,8 @@ fn create_fixture_with_merged_feature_branch() -> PathBuf {
         &fixture,
         &["merge", "-q", "--no-ff", "feature", "-m", "merge feature"],
     );
+    // ブランチと同名のタグがあっても、ブランチ名をそのまま読めて切り替えられることを確かめる。
+    run_git_in_fixture(&fixture, &["tag", "feature"]);
     fixture
 }
 
@@ -46,7 +48,7 @@ fn reads_history_and_branches_then_switches_branch() {
     let summaries: Vec<&str> = snapshot
         .commits
         .iter()
-        .map(|c| c.summary.as_str())
+        .map(|commit| commit.summary.as_str())
         .collect();
     assert_eq!(summaries.len(), 4);
     assert_eq!(summaries[0], "merge feature");
@@ -57,7 +59,7 @@ fn reads_history_and_branches_then_switches_branch() {
     let branch_states: Vec<(&str, bool)> = snapshot
         .local_branches
         .iter()
-        .map(|b| (b.name.as_str(), b.is_current))
+        .map(|branch| (branch.name.as_str(), branch.is_current))
         .collect();
     assert_eq!(branch_states, [("feature", false), ("main", true)]);
     assert_eq!(snapshot.local_branches[1].head_commit_id, merge.id);
@@ -67,8 +69,8 @@ fn reads_history_and_branches_then_switches_branch() {
     let current: Vec<&str> = switched
         .local_branches
         .iter()
-        .filter(|b| b.is_current)
-        .map(|b| b.name.as_str())
+        .filter(|branch| branch.is_current)
+        .map(|branch| branch.name.as_str())
         .collect();
     assert_eq!(current, ["feature"]);
 

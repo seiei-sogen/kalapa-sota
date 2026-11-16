@@ -10,7 +10,10 @@ pub fn read_commit_history(repository_path: &Path) -> Result<Vec<Commit>, GitCom
         repository_path,
         &[
             "log",
+            // log.showSignature=true だと、署名の検証結果が %H の前に出力されてコミット ID が壊れる。
+            "--no-show-signature",
             "--exclude=refs/stash",
+            "--exclude=refs/notes/*",
             "--all",
             "--topo-order",
             "--max-count=1000",

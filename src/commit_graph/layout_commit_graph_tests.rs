@@ -6,7 +6,10 @@ use CommitGraphLine::{IntoCommit, OutOfCommit, PassThrough};
 fn commit(id: &str, parent_ids: &[&str]) -> Commit {
     Commit {
         id: CommitId(id.to_string()),
-        parent_ids: parent_ids.iter().map(|p| CommitId(p.to_string())).collect(),
+        parent_ids: parent_ids
+            .iter()
+            .map(|parent_id| CommitId(parent_id.to_string()))
+            .collect(),
         summary: String::new(),
         author_name: String::new(),
         committed_at: String::new(),
@@ -25,10 +28,10 @@ fn assert_layout(commits: &[Commit], expected_lane_count: usize, expected_rows: 
     let layout = layout_commit_graph(commits);
     let sorted = |rows: &[CommitGraphRow]| -> Vec<CommitGraphRow> {
         rows.iter()
-            .map(|r| {
-                let mut lines = r.lines.clone();
+            .map(|graph_row| {
+                let mut lines = graph_row.lines.clone();
                 lines.sort();
-                row(r.commit_lane, &lines)
+                row(graph_row.commit_lane, &lines)
             })
             .collect()
     };

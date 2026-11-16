@@ -23,7 +23,7 @@ commit_at 3 Bob "Add login form"
 commit_at 4 Bob "Validate login input"
 git -C "$fixture" switch -q main
 commit_at 4 Alice "Update dependencies"
-GIT_COMMITTER_DATE="2026-11-05T10:00:00" git -C "$fixture" -c user.name=Alice -c user.email=dev@example.com \
+GIT_COMMITTER_DATE="2026-11-05T10:00:00" git -C "$fixture" -c user.name=Alice -c user.email=dev@example.com -c commit.gpgsign=false \
   merge -q --no-ff feature-a -m "Merge branch 'feature-a'"
 git -C "$fixture" switch -q -c feature-b
 commit_at 6 Dave "Sketch settings page"
@@ -33,7 +33,7 @@ commit_at 8 Alice "Release 0.1"
 
 cargo build --quiet --manifest-path "$app_root/Cargo.toml"
 wait_until() { for _ in $(seq 150); do eval "$1" && return 0; sleep 0.2; done; echo "timed out: $1" >&2; return 1; }
-pgrep -x Xvfb >/dev/null || { Xvfb :99 -screen 0 1280x800x24 >/dev/null 2>&1 & }
+xdotool getmouselocation >/dev/null 2>&1 || { Xvfb :99 -screen 0 1280x800x24 >/dev/null 2>&1 & }
 wait_until 'xdotool getmouselocation >/dev/null 2>&1'
 
 "$app_root/target/debug/kalapa" "$fixture" &

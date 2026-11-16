@@ -1,20 +1,44 @@
 mod commit_graph;
 mod git_cli;
+mod history_window;
 mod repository;
 
-use gpui::{App, Application, Bounds, Context, Window, WindowBounds, WindowOptions, div, prelude::*, px, rgb, size};
+use std::path::PathBuf;
 
-struct Hello;
+use gpui::{
+    App, Application, Bounds, TitlebarOptions, WindowBounds, WindowOptions, prelude::*, px, size,
+};
 
-impl Render for Hello {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div().size_full().bg(rgb(0x1e1e1e)).text_color(rgb(0xffffff)).child("hello gpui")
-    }
-}
+use history_window::HistoryWindow;
 
 fn main() {
-    Application::new().run(|cx: &mut App| {
-        let bounds = Bounds::centered(None, size(px(600.), px(400.)), cx);
-        cx.open_window(WindowOptions { window_bounds: Some(WindowBounds::Windowed(bounds)), ..Default::default() }, |_, cx| cx.new(|_| Hello)).unwrap();
+    let repository_path = std::env::args_os()
+        .nth(1)
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from("."));
+    let window_title = format!("kalapa - {}", repository_path.display());
+    let history_window = match HistoryWindow::load(repository_path) {
+        Ok(history_window) => history_window,
+        Err(error) => {
+            eprintln!("{}", error.message);
+            std::process::exit(1);
+        }
+    };
+
+    Application::new().run(move |cx: &mut App| {
+        let bounds = Bounds::centered(None, size(px(1100.), px(700.)), cx);
+        cx.open_window(
+            WindowOptions {
+                window_bounds: Some(WindowBounds::Windowed(bounds)),
+                titlebar: Some(TitlebarOptions {
+                    title: Some(window_title.into()),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+            |_, cx| cx.new(|_| history_window),
+        )
+        .expect("open the history window");
+        cx.on_window_closed(|cx| cx.quit()).detach();
     });
 }

@@ -1,0 +1,9 @@
+[package]
+name = "kalapa"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+gpui = "0.2.2"
+# gpui 0.2.2 が間接依存する xattr 0.2.3 は libc::ENOATTR を使うが、libc 0.2.190 で Linux から消えた。
+libc = "=0.2.189"

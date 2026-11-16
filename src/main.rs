@@ -1,3 +1,7 @@
+mod commit_graph;
+mod git_cli;
+mod repository;
+
 use gpui::{App, Application, Bounds, Context, Window, WindowBounds, WindowOptions, div, prelude::*, px, rgb, size};
 
 struct Hello;

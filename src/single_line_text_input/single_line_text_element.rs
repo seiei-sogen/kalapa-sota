@@ -6,7 +6,7 @@ use gpui::{
 
 use super::SingleLineTextInput;
 use super::shape_displayed_text_line::shape_displayed_text_line;
-use super::single_line_text_input_colors::{CURSOR, SELECTION_BACKGROUND};
+use crate::appearance::dark_theme_colors::{PRIMARY_TEXT, TEXT_SELECTION_BACKGROUND};
 
 pub(super) struct SingleLineTextElement {
     pub(super) input: Entity<SingleLineTextInput>,
@@ -74,7 +74,7 @@ impl Element for SingleLineTextElement {
                         point(bounds.left() + cursor_pos, bounds.top()),
                         size(px(2.), bounds.bottom() - bounds.top()),
                     ),
-                    rgb(CURSOR),
+                    rgb(PRIMARY_TEXT),
                 )),
             )
         } else {
@@ -90,7 +90,7 @@ impl Element for SingleLineTextElement {
                             bounds.bottom(),
                         ),
                     ),
-                    rgb(SELECTION_BACKGROUND),
+                    rgb(TEXT_SELECTION_BACKGROUND),
                 )),
                 None,
             )

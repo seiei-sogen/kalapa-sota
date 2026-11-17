@@ -4,7 +4,6 @@ mod render_single_line_text_input;
 mod select_text_with_mouse;
 mod shape_displayed_text_line;
 mod single_line_text_element;
-mod single_line_text_input_colors;
 mod single_line_text_input_ime_handler;
 mod single_line_text_input_key_bindings;
 mod single_line_text_input_state;

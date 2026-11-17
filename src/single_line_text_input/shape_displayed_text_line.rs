@@ -1,7 +1,7 @@
 use gpui::{Hsla, ShapedLine, TextRun, UnderlineStyle, Window, px, rgb};
 
 use super::SingleLineTextInput;
-use super::single_line_text_input_colors::PLACEHOLDER_TEXT;
+use crate::appearance::dark_theme_colors::SECONDARY_TEXT;
 
 pub(super) fn shape_displayed_text_line(
     input: &SingleLineTextInput,
@@ -10,7 +10,7 @@ pub(super) fn shape_displayed_text_line(
     let style = window.text_style();
 
     let (display_text, text_color) = if input.content.is_empty() {
-        (input.placeholder.clone(), Hsla::from(rgb(PLACEHOLDER_TEXT)))
+        (input.placeholder.clone(), Hsla::from(rgb(SECONDARY_TEXT)))
     } else {
         (input.content.clone(), style.color)
     };

@@ -5,8 +5,8 @@ use gpui::{
 
 use super::SingleLineTextInput;
 use super::single_line_text_element::SingleLineTextElement;
-use super::single_line_text_input_colors::{INPUT_BACKGROUND, INPUT_BORDER, INPUT_TEXT};
 use super::single_line_text_input_key_bindings::SINGLE_LINE_TEXT_INPUT_KEY_CONTEXT;
+use crate::appearance::dark_theme_colors::{PANEL_BORDER, PRIMARY_TEXT, WINDOW_BACKGROUND};
 
 const LINE_HEIGHT: f32 = 20.;
 const PADDING: f32 = 4.;
@@ -34,10 +34,10 @@ impl Render for SingleLineTextInput {
             .on_mouse_up(MouseButton::Left, cx.listener(Self::on_mouse_up))
             .on_mouse_up_out(MouseButton::Left, cx.listener(Self::on_mouse_up))
             .on_mouse_move(cx.listener(Self::on_mouse_move))
-            .bg(rgb(INPUT_BACKGROUND))
+            .bg(rgb(WINDOW_BACKGROUND))
             .border_1()
-            .border_color(rgb(INPUT_BORDER))
-            .text_color(rgb(INPUT_TEXT))
+            .border_color(rgb(PANEL_BORDER))
+            .text_color(rgb(PRIMARY_TEXT))
             .line_height(px(LINE_HEIGHT))
             .text_size(px(14.))
             // shortcut: 横スクロールしない。入力欄より長い文は右端で切れて見えない。長い件名を打つ使い方が多いなら、カーソル位置に合わせて描画位置をずらす。

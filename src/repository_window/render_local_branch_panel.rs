@@ -7,6 +7,7 @@ use crate::appearance::dark_theme_colors::{
     SECONDARY_TEXT,
 };
 use crate::appearance::repository_window_sizes::{BRANCH_PANEL_WIDTH, ROW_HEIGHT};
+use crate::git_cli::switch_local_branch;
 
 pub fn render_local_branch_panel(
     repository_window: &RepositoryWindow,
@@ -42,8 +43,10 @@ pub fn render_local_branch_panel(
                     row.bg(rgb(CURRENT_BRANCH_BACKGROUND))
                         .font_weight(FontWeight::BOLD)
                 })
-                .on_click(cx.listener(move |this, _, _, cx| {
-                    this.switch_branch_and_reload(&branch_name);
+                .on_click(cx.listener(move |repository_window, _, _, cx| {
+                    repository_window.run_git_operation_and_reload(|repository_path| {
+                        switch_local_branch(repository_path, &branch_name)
+                    });
                     cx.notify();
                 }))
                 .child(

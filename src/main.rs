@@ -10,6 +10,7 @@ use gpui::{
     App, Application, Bounds, TitlebarOptions, WindowBounds, WindowOptions, prelude::*, px, size,
 };
 
+use git_cli::read_repository_snapshot;
 use repository_window::RepositoryWindow;
 
 fn main() {
@@ -18,8 +19,8 @@ fn main() {
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from("."));
     let window_title = format!("kalapa - {}", repository_path.display());
-    let repository_window = match RepositoryWindow::load(repository_path) {
-        Ok(repository_window) => repository_window,
+    let snapshot = match read_repository_snapshot(&repository_path) {
+        Ok(snapshot) => snapshot,
         Err(error) => {
             eprintln!("{}", error.message);
             std::process::exit(1);
@@ -37,7 +38,7 @@ fn main() {
                 }),
                 ..Default::default()
             },
-            |_, cx| cx.new(|_| repository_window),
+            |window, cx| cx.new(|cx| RepositoryWindow::new(repository_path, snapshot, window, cx)),
         )
         .expect("open the repository window");
         cx.on_window_closed(|cx| cx.quit()).detach();

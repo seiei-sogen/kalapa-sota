@@ -80,6 +80,13 @@ fn reads_history_and_branches_then_switches_branch() {
         "git stderr reaches the caller: {}",
         error.message
     );
+    let error =
+        run_git_command(&fixture, &["commit", "--quiet", "-m", "nothing staged"]).unwrap_err();
+    assert!(
+        error.message.contains("nothing to commit"),
+        "git stdout reaches the caller when stderr is empty: {}",
+        error.message
+    );
 
     std::fs::remove_dir_all(&fixture).unwrap();
 }

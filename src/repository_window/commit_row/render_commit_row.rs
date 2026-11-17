@@ -1,11 +1,11 @@
 use gpui::{Div, div, prelude::*, px, rgb};
 
 use super::paint_commit_graph_cell::paint_commit_graph_cell;
-use crate::commit_graph::CommitGraphRow;
-use crate::history_window::appearance::dark_theme_colors::SECONDARY_TEXT;
-use crate::history_window::appearance::history_window_sizes::{
+use crate::appearance::dark_theme_colors::SECONDARY_TEXT;
+use crate::appearance::repository_window_sizes::{
     AUTHOR_COLUMN_WIDTH, COMMITTED_AT_COLUMN_WIDTH, GRAPH_LANE_WIDTH, ROW_HEIGHT,
 };
+use crate::commit_graph::CommitGraphRow;
 use crate::repository::Commit;
 
 pub fn render_commit_row(

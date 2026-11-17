@@ -1,9 +1,0 @@
-pub const WINDOW_BACKGROUND: u32 = 0x1e1e1e;
-pub const BRANCH_PANEL_BACKGROUND: u32 = 0x252526;
-pub const PANEL_BORDER: u32 = 0x3c3c3c;
-pub const PRIMARY_TEXT: u32 = 0xd4d4d4;
-pub const SECONDARY_TEXT: u32 = 0x8b8b8b;
-pub const HOVERED_ROW_BACKGROUND: u32 = 0x2a2d2e;
-pub const CURRENT_BRANCH_BACKGROUND: u32 = 0x37373d;
-pub const GIT_ERROR_BACKGROUND: u32 = 0x5a1d1d;
-pub const GIT_ERROR_TEXT: u32 = 0xf2b8b5;

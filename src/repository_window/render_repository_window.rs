@@ -2,14 +2,15 @@ use std::ops::Range;
 
 use gpui::{Context, Window, div, prelude::*, rgb, uniform_list};
 
-use super::HistoryWindow;
-use super::appearance::dark_theme_colors::{
-    GIT_ERROR_BACKGROUND, GIT_ERROR_TEXT, PRIMARY_TEXT, WINDOW_BACKGROUND,
-};
+use super::RepositoryWindow;
+use super::commit_panel::render_commit_panel;
 use super::commit_row::render_commit_row;
 use super::render_local_branch_panel::render_local_branch_panel;
+use crate::appearance::dark_theme_colors::{
+    GIT_ERROR_BACKGROUND, GIT_ERROR_TEXT, PRIMARY_TEXT, WINDOW_BACKGROUND,
+};
 
-impl Render for HistoryWindow {
+impl Render for RepositoryWindow {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let git_error_banner = self.last_git_error.as_ref().map(|error| {
             div()
@@ -51,7 +52,8 @@ impl Render for HistoryWindow {
                     .min_w_0()
                     .h_full()
                     .children(git_error_banner)
-                    .child(commit_history_list),
+                    .child(commit_history_list)
+                    .child(render_commit_panel(self, cx)),
             )
     }
 }

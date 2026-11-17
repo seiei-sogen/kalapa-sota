@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Xvfb 上でアプリを起動し、履歴グラフの画面とブランチ切り替えを確かめる。
+# Xvfb 上でアプリを起動し、履歴グラフ、ブランチ切り替え、変更一覧のステージ切り替え、
+# ウィンドウに戻ったときの読み直しを確かめる。
 # 使い方: scripts/verify_on_xvfb.sh <作業ディレクトリ>
 # 必要なもの: git, Xvfb, xdotool, ImageMagick (import), Vulkan ドライバ (lavapipe で可)
 set -euo pipefail
@@ -7,6 +8,8 @@ set -euo pipefail
 work_dir=$(realpath -m "${1:?作業ディレクトリを指定する}")
 fixture="$work_dir/fixture-repo"
 export DISPLAY=:99
+# 確認用の git status が index.lock を取り、同時に走るアプリの git add や git reset を失敗させないようにする。
+export GIT_OPTIONAL_LOCKS=0
 app_root=$(cd "$(dirname "$0")/.." && pwd)
 
 rm -rf "$fixture" && mkdir -p "$fixture"
@@ -14,6 +17,8 @@ commit_at() { GIT_AUTHOR_DATE="2026-11-0$1T10:00:00" GIT_COMMITTER_DATE="2026-11
   git -C "$fixture" -c user.name="$2" -c user.email=dev@example.com -c commit.gpgsign=false commit -q --allow-empty -m "$3"; }
 git -C "$fixture" init -q -b main
 commit_at 1 Alice "Initial commit"
+echo "# Fixture" > "$fixture/README.md" && echo "## 0.1" > "$fixture/CHANGELOG.md"
+git -C "$fixture" add README.md CHANGELOG.md
 commit_at 2 Alice "Add README"
 git -C "$fixture" switch -q -c hotfix
 commit_at 3 Carol "Fix crash on startup"
@@ -30,6 +35,11 @@ commit_at 6 Dave "Sketch settings page"
 commit_at 7 Dave "Persist settings"
 git -C "$fixture" switch -q main
 commit_at 8 Alice "Release 0.1"
+echo "Usage" >> "$fixture/README.md"
+echo "- staged entry" >> "$fixture/CHANGELOG.md"
+git -C "$fixture" add CHANGELOG.md
+echo "- unstaged entry" >> "$fixture/CHANGELOG.md"
+echo "todo" > "$fixture/memo.txt"
 
 cargo build --quiet --manifest-path "$app_root/Cargo.toml"
 wait_until() { for _ in $(seq 150); do eval "$1" && return 0; sleep 0.2; done; echo "timed out: $1" >&2; return 1; }
@@ -56,3 +66,39 @@ import -window root "$work_dir/history-after-checkout.png"
 current_branch=$(git -C "$fixture" branch --show-current)
 echo "current branch after click: $current_branch"
 [ "$current_branch" = feature-b ]
+
+file_status() { git -C "$fixture" status --porcelain=v1 -- "$1"; }
+[ "$(git -C "$fixture" status --porcelain=v1)" = "$(printf 'MM CHANGELOG.md\n M README.md\n?? memo.txt')" ]
+commit_panel_height=240
+row_height=26
+branch_panel_width=220
+changed_file_row_y() { echo $((HEIGHT - commit_panel_height + row_height * ($1 + 1) + row_height / 2)); }
+xdotool mousemove $((X + 320)) $((Y + $(changed_file_row_y 1))) click 1
+wait_until '[ "$(file_status README.md)" = "M  README.md" ]'
+xdotool mousemove $((X + 320)) $((Y + $(changed_file_row_y 0))) click 1
+wait_until '[ "$(file_status CHANGELOG.md)" = "M  CHANGELOG.md" ]'
+# 描き直す前に押すと、行は前の状態 (MM) のまま git add をもう一度打つので、描き直しを待つ。
+sleep 0.5
+xdotool mousemove $((X + 320)) $((Y + $(changed_file_row_y 0))) click 1
+wait_until '[ "$(file_status CHANGELOG.md)" = " M CHANGELOG.md" ]'
+sleep 1
+import -window root "$work_dir/changes-after-staging-clicks.png"
+echo "status after clicking README.md once and CHANGELOG.md twice:"
+git -C "$fixture" status --porcelain=v1
+
+count_colors_in_fourth_changed_file_row() {
+  import -window "$window" -crop "$((WIDTH - branch_panel_width))x${row_height}+${branch_panel_width}+$(($(changed_file_row_y 3) - row_height / 2))" -format "%k" info:
+}
+echo "idea" > "$fixture/new-idea.txt"
+sleep 1
+color_count_before_refocus=$(count_colors_in_fourth_changed_file_row)
+echo "colors in the 4th row before refocus: $color_count_before_refocus"
+[ "$color_count_before_refocus" = 1 ]
+root_window=$(xdotool search --maxdepth 0 --name "")
+xdotool windowfocus "$root_window"
+sleep 0.5
+xdotool windowfocus --sync "$window"
+wait_until '[ "$(count_colors_in_fourth_changed_file_row)" -gt 1 ]'
+sleep 1
+import -window root "$work_dir/changes-after-refocus.png"
+echo "colors in the 4th row after refocus: $(count_colors_in_fourth_changed_file_row)"

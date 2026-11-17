@@ -2,8 +2,8 @@ use std::path::Path;
 
 use super::GitCommandError;
 use super::changed_files::read_changed_files;
+use super::local_branches::read_local_branches;
 use super::read_commit_history::read_commit_history;
-use super::read_local_branches::read_local_branches;
 use crate::repository::RepositorySnapshot;
 
 pub fn read_repository_snapshot(

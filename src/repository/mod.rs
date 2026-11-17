@@ -1,6 +1,6 @@
 mod changed_files;
 mod commit;
-mod local_branch;
+mod local_branches;
 mod repository_snapshot;
 
 pub use changed_files::{
@@ -8,5 +8,5 @@ pub use changed_files::{
     decide_commit_inclusion,
 };
 pub use commit::{Commit, CommitId};
-pub use local_branch::LocalBranch;
+pub use local_branches::{LocalBranch, UpstreamTracking};
 pub use repository_snapshot::RepositorySnapshot;

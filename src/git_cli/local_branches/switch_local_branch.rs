@@ -1,7 +1,7 @@
 use std::path::Path;
 
-use super::GitCommandError;
-use super::run_git_command::run_git_command;
+use crate::git_cli::GitCommandError;
+use crate::git_cli::run_git_command::run_git_command;
 
 pub fn switch_local_branch(
     repository_path: &Path,

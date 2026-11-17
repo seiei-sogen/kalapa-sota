@@ -43,6 +43,10 @@ impl SingleLineTextInput {
         else {
             return 0;
         };
+        // 打った直後でまだ描き直していないと、前の文字列 (空ならプレースホルダー) の位置を返して content を範囲外で切ってしまう。
+        if line.text != self.content {
+            return self.content.len();
+        }
         if position.y < bounds.top() {
             return 0;
         }

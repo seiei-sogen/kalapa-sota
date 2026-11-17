@@ -1,4 +1,5 @@
 mod edit_text_and_use_clipboard;
+mod grapheme_boundary;
 mod move_cursor_and_extend_selection;
 mod render_single_line_text_input;
 mod select_text_with_mouse;
@@ -8,9 +9,6 @@ mod single_line_text_input_ime_handler;
 mod single_line_text_input_key_bindings;
 mod single_line_text_input_state;
 mod text_offset_conversion;
-
-#[cfg(test)]
-mod text_offset_conversion_tests;
 
 pub use single_line_text_input_key_bindings::bind_single_line_text_input_keys;
 pub use single_line_text_input_state::SingleLineTextInput;

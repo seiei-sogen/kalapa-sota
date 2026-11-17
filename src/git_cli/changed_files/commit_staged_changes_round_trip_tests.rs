@@ -48,6 +48,11 @@ fn commits_only_the_staged_file_and_lets_git_refuse_an_empty_index_or_message() 
         !nothing_staged.message.is_empty(),
         "git explains on stdout only, and that reaches the caller"
     );
+    assert!(
+        !nothing_staged.message.contains('\n'),
+        "only git's closing reason line reaches the banner, not the whole status: {:?}",
+        nothing_staged.message
+    );
     run_git_in_fixture(&fixture, &["add", "unstaged.txt"]);
     let empty_message = commit_staged_changes(&fixture, "").unwrap_err();
     assert!(!empty_message.message.is_empty(), "git explains why");

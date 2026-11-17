@@ -1,6 +1,6 @@
-use super::text_offset_conversion::{
-    content_range_from_marked_text_range_utf16, next_grapheme_boundary, previous_grapheme_boundary,
-    utf8_offset_from_utf16, utf8_range_from_utf16, utf16_offset_from_utf8, utf16_range_from_utf8,
+use super::{
+    content_range_from_marked_text_range_utf16, utf8_offset_from_utf16, utf8_range_from_utf16,
+    utf16_offset_from_utf8, utf16_range_from_utf8,
 };
 
 // "🎉" は UTF-8 で 4 バイト、UTF-16 で 2 単位。"コ" は 3 バイト、1 単位。
@@ -23,19 +23,6 @@ fn offsets_past_the_end_clamp_to_the_end() {
     let text = ASCII_JAPANESE_AND_EMOJI;
     assert_eq!(utf8_offset_from_utf16(text, 100), text.len());
     assert_eq!(utf16_offset_from_utf8(text, 100), 11);
-}
-
-#[test]
-fn grapheme_boundaries_skip_whole_characters() {
-    // "が" を "か" と結合濁点 U+3099 に分けた形。2 文字で 1 書記素になる。
-    let text = "aか\u{3099}🎉";
-    assert_eq!(next_grapheme_boundary(text, 0), 1);
-    assert_eq!(next_grapheme_boundary(text, 1), 7);
-    assert_eq!(next_grapheme_boundary(text, 7), 11);
-    assert_eq!(next_grapheme_boundary(text, 11), 11);
-    assert_eq!(previous_grapheme_boundary(text, 11), 7);
-    assert_eq!(previous_grapheme_boundary(text, 7), 1);
-    assert_eq!(previous_grapheme_boundary(text, 0), 0);
 }
 
 #[test]

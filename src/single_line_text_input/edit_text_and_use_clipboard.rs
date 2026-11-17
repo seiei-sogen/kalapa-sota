@@ -1,8 +1,8 @@
 use gpui::{ClipboardItem, Context, EntityInputHandler, Window};
 
 use super::SingleLineTextInput;
+use super::grapheme_boundary::{next_grapheme_boundary, previous_grapheme_boundary};
 use super::single_line_text_input_key_bindings::{Backspace, Copy, Cut, Delete, Paste};
-use super::text_offset_conversion::{next_grapheme_boundary, previous_grapheme_boundary};
 
 impl SingleLineTextInput {
     pub(super) fn backspace(&mut self, _: &Backspace, window: &mut Window, cx: &mut Context<Self>) {
@@ -27,7 +27,8 @@ impl SingleLineTextInput {
 
     pub(super) fn paste(&mut self, _: &Paste, window: &mut Window, cx: &mut Context<Self>) {
         if let Some(text) = cx.read_from_clipboard().and_then(|item| item.text()) {
-            self.replace_text_in_range(None, &text.replace("\n", " "), window, cx);
+            let single_line_text = text.replace("\r\n", " ").replace(['\r', '\n'], " ");
+            self.replace_text_in_range(None, &single_line_text, window, cx);
         }
     }
 

@@ -1,10 +1,10 @@
 use gpui::{Context, Window};
 
 use super::SingleLineTextInput;
+use super::grapheme_boundary::{next_grapheme_boundary, previous_grapheme_boundary};
 use super::single_line_text_input_key_bindings::{
     End, Home, Left, Right, SelectAll, SelectLeft, SelectRight,
 };
-use super::text_offset_conversion::{next_grapheme_boundary, previous_grapheme_boundary};
 
 impl SingleLineTextInput {
     pub(super) fn left(&mut self, _: &Left, _: &mut Window, cx: &mut Context<Self>) {

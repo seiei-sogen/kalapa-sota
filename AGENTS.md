@@ -24,3 +24,9 @@
 
 - 一つのファイルに、関数をいくつも詰め込まない。これは AI がやりがちなことである。原則は、1ファイルに1関数である。
 - 1ファイルは、原則として、コメントなどを除いて200行以内に収める。
+
+## 作業の進め方
+
+- 作業は、pstack の `poteto-mode`（ポテトモード）で進める。
+- テストは、superpowers の `test-driven-development` スキルに従って書く。
+  - https://github.com/obra/superpowers/blob/main/skills/test-driven-development/SKILL.md

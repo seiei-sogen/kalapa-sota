@@ -14,6 +14,5 @@ pub struct RepositoryWindow {
     pub commit_graph: CommitGraphLayout,
     pub last_git_error: Option<GitCommandError>,
     pub commit_message_input: Entity<SingleLineTextInput>,
-    /// push をバックグラウンドで実行している間だけ true。この間に Push を押しても、二重には実行しない。
     pub push_in_progress: bool,
 }

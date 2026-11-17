@@ -4,7 +4,6 @@ use crate::git_cli::push_current_branch;
 use crate::repository_window::RepositoryWindow;
 
 impl RepositoryWindow {
-    /// push はネットワークを待つので、UI スレッドを止めないようバックグラウンドで実行する。
     pub fn push_current_branch_in_background(&mut self, cx: &mut Context<Self>) {
         if self.push_in_progress {
             return;
@@ -17,12 +16,12 @@ impl RepositoryWindow {
                 .background_executor()
                 .spawn(async move { push_current_branch(&repository_path) })
                 .await;
-            // ウィンドウが閉じていたら、結果を見せる先がないので捨てる。
             repository_window.update(cx, |repository_window, cx| {
                 repository_window.push_in_progress = false;
                 repository_window.run_git_operation_and_reload(|_| push_result);
                 cx.notify();
             })
+            .ok();
         })
         .detach();
     }

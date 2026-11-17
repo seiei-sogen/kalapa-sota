@@ -124,7 +124,6 @@ input_text_signature() {
 push_button_signature() {
   import -window "$window" -crop "${button_width}x${input_height}+$((WIDTH - panel_padding_x - button_width))+$((HEIGHT - bottom_row_padding_y - input_height))" -format "%#" info:
 }
-# feature-b は origin/feature-b と同じところにいるので、Push ↑0 と出ている。
 up_to_date_push_button_signature=$(push_button_signature)
 xdotool mousemove $((X + 320)) $bottom_row_y click 1
 sleep 0.5
@@ -165,10 +164,12 @@ import -window root "$work_dir/banner-after-refocus.png"
 echo "banner still shown after refocus"
 
 [ "$(push_button_signature)" != "$up_to_date_push_button_signature" ] || { echo "push label did not count the new commit" >&2; exit 1; }
-# push が一瞬で終わると Pushing… の表示と二重押しの無視を確かめられないので、フックで 2 秒待たせて呼ばれた回数を数える。
-printf '#!/bin/sh\necho called >> "%s"\nsleep 2\n' "$work_dir/pre-push-calls" > "$fixture/.git/hooks/pre-push"
-chmod +x "$fixture/.git/hooks/pre-push"
-rm -f "$work_dir/pre-push-calls"
+install_pre_push_hook_that_counts_calls_and_waits_two_seconds() {
+  printf '#!/bin/sh\necho called >> "%s"\nsleep 2\n' "$work_dir/pre-push-calls" > "$fixture/.git/hooks/pre-push"
+  chmod +x "$fixture/.git/hooks/pre-push"
+  rm -f "$work_dir/pre-push-calls"
+}
+install_pre_push_hook_that_counts_calls_and_waits_two_seconds
 xdotool mousemove $push_button_x $bottom_row_y click 1
 sleep 0.5
 import -window root "$work_dir/pushing.png"

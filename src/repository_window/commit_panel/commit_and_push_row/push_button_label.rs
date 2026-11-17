@@ -1,6 +1,5 @@
 use crate::repository::UpstreamTracking;
 
-/// 現在のブランチがないのは HEAD が切り離されているとき。押せば git が理由を返して断る。
 pub fn push_button_label(
     push_in_progress: bool,
     current_branch_tracking: Option<UpstreamTracking>,

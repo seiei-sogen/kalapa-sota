@@ -13,7 +13,7 @@ mod fixture_repository;
 #[cfg(test)]
 mod git_cli_round_trip_tests;
 
-pub use changed_files::toggle_changed_file_in_commit;
+pub use changed_files::{commit_staged_changes, toggle_changed_file_in_commit};
 pub use git_command_error::GitCommandError;
 pub use read_repository_snapshot::read_repository_snapshot;
 pub use switch_local_branch::switch_local_branch;

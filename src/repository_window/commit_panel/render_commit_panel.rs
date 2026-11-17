@@ -2,7 +2,8 @@ use std::ops::Range;
 
 use gpui::{Context, Div, div, prelude::*, px, rgb, uniform_list};
 
-use super::render_changed_file_row::render_changed_file_row;
+use super::changed_file_row::render_changed_file_row;
+use super::commit_and_push_row::render_commit_and_push_row;
 use crate::appearance::dark_theme_colors::{PANEL_BACKGROUND, PANEL_BORDER, SECONDARY_TEXT};
 use crate::appearance::repository_window_sizes::{COMMIT_PANEL_HEIGHT, ROW_HEIGHT};
 use crate::repository_window::RepositoryWindow;
@@ -47,4 +48,5 @@ pub fn render_commit_panel(
                 .child(format!("CHANGES ({changed_file_count})")),
         )
         .child(changed_file_list)
+        .child(render_commit_and_push_row(repository_window, cx))
 }

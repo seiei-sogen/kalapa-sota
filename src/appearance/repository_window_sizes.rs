@@ -6,3 +6,4 @@ pub const COMMIT_DOT_RADIUS: f32 = 4.;
 pub const AUTHOR_COLUMN_WIDTH: f32 = 140.;
 pub const COMMITTED_AT_COLUMN_WIDTH: f32 = 130.;
 pub const COMMIT_PANEL_HEIGHT: f32 = 240.;
+pub const COMMIT_PANEL_BUTTON_WIDTH: f32 = 96.;

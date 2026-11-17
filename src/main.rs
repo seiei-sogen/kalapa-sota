@@ -3,8 +3,6 @@ mod commit_graph;
 mod git_cli;
 mod repository;
 mod repository_window;
-// コミットパネルが使うまでは未使用なので警告を止める。統合時に外す。
-#[allow(dead_code, unused_imports)]
 mod single_line_text_input;
 
 use std::path::PathBuf;
@@ -15,6 +13,7 @@ use gpui::{
 
 use git_cli::read_repository_snapshot;
 use repository_window::RepositoryWindow;
+use single_line_text_input::bind_single_line_text_input_keys;
 
 fn main() {
     let repository_path = std::env::args_os()
@@ -31,6 +30,7 @@ fn main() {
     };
 
     Application::new().run(move |cx: &mut App| {
+        bind_single_line_text_input_keys(cx);
         let bounds = Bounds::centered(None, size(px(1100.), px(700.)), cx);
         cx.open_window(
             WindowOptions {

@@ -1,7 +1,8 @@
+mod appearance;
 mod commit_graph;
 mod git_cli;
-mod history_window;
 mod repository;
+mod repository_window;
 
 use std::path::PathBuf;
 
@@ -9,7 +10,7 @@ use gpui::{
     App, Application, Bounds, TitlebarOptions, WindowBounds, WindowOptions, prelude::*, px, size,
 };
 
-use history_window::HistoryWindow;
+use repository_window::RepositoryWindow;
 
 fn main() {
     let repository_path = std::env::args_os()
@@ -17,8 +18,8 @@ fn main() {
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from("."));
     let window_title = format!("kalapa - {}", repository_path.display());
-    let history_window = match HistoryWindow::load(repository_path) {
-        Ok(history_window) => history_window,
+    let repository_window = match RepositoryWindow::load(repository_path) {
+        Ok(repository_window) => repository_window,
         Err(error) => {
             eprintln!("{}", error.message);
             std::process::exit(1);
@@ -36,9 +37,9 @@ fn main() {
                 }),
                 ..Default::default()
             },
-            |_, cx| cx.new(|_| history_window),
+            |_, cx| cx.new(|_| repository_window),
         )
-        .expect("open the history window");
+        .expect("open the repository window");
         cx.on_window_closed(|cx| cx.quit()).detach();
     });
 }

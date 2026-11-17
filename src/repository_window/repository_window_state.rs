@@ -4,7 +4,7 @@ use crate::commit_graph::CommitGraphLayout;
 use crate::git_cli::GitCommandError;
 use crate::repository::RepositorySnapshot;
 
-pub struct HistoryWindow {
+pub struct RepositoryWindow {
     pub repository_path: PathBuf,
     pub snapshot: RepositorySnapshot,
     /// snapshot.commits から作る。snapshot と一緒にしか入れ替えない。

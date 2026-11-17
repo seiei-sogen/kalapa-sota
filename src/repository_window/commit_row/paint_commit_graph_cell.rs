@@ -1,10 +1,10 @@
 use gpui::{Bounds, Canvas, PathBuilder, canvas, fill, point, px, size};
 
-use crate::commit_graph::{CommitGraphLine, CommitGraphRow};
-use crate::history_window::appearance::branch_lane_color;
-use crate::history_window::appearance::history_window_sizes::{
+use crate::appearance::branch_lane_color;
+use crate::appearance::repository_window_sizes::{
     COMMIT_DOT_RADIUS, GRAPH_LANE_WIDTH, GRAPH_LINE_WIDTH,
 };
+use crate::commit_graph::{CommitGraphLine, CommitGraphRow};
 
 pub fn paint_commit_graph_cell(graph_row: CommitGraphRow) -> Canvas<()> {
     canvas(

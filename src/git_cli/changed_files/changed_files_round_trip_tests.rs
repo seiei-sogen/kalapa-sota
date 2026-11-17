@@ -32,7 +32,9 @@ fn toggle_listed_file(repository_path: &Path, root_relative_path: &str) {
     toggle_changed_file_in_commit(repository_path, &changed_file).unwrap();
 }
 
-fn expected(staging_by_path: &[(&str, ChangedFileStaging)]) -> Vec<(String, ChangedFileStaging)> {
+fn expected_staging_by_path(
+    staging_by_path: &[(&str, ChangedFileStaging)],
+) -> Vec<(String, ChangedFileStaging)> {
     staging_by_path
         .iter()
         .map(|(path, staging)| (path.to_string(), *staging))
@@ -70,7 +72,7 @@ fn lists_each_kind_of_change_and_toggles_it_in_and_out_of_the_commit() {
     std::fs::remove_file(fixture.join("deleted.txt")).unwrap();
     write_fixture_file(&fixture, "new dir/untracked.txt", "new\n");
 
-    let as_read = expected(&[
+    let as_read = expected_staging_by_path(&[
         ("a*b[1].txt", Unstaged(Modified)),
         ("aXb1.txt", Unstaged(Modified)),
         ("deleted.txt", Unstaged(Deleted)),
@@ -95,7 +97,7 @@ fn lists_each_kind_of_change_and_toggles_it_in_and_out_of_the_commit() {
     }
     assert_eq!(
         read_sorted_staging(&fixture),
-        expected(&[
+        expected_staging_by_path(&[
             ("a*b[1].txt", Staged(Modified)),
             ("aXb1.txt", Unstaged(Modified)),
             ("deleted.txt", Staged(Deleted)),
@@ -135,7 +137,7 @@ fn toggles_a_file_outside_the_subdirectory_the_repository_was_opened_at() {
 
     assert_eq!(
         read_sorted_staging(&opened_at_subdirectory),
-        expected(&[
+        expected_staging_by_path(&[
             ("sub/inner.txt", Staged(Modified)),
             ("top.txt", Staged(Modified))
         ])
@@ -151,13 +153,23 @@ fn unstages_a_file_before_the_first_commit() {
     toggle_listed_file(&fixture, "first.txt");
     assert_eq!(
         read_sorted_staging(&fixture),
-        expected(&[("first.txt", Staged(Added))])
+        expected_staging_by_path(&[("first.txt", Staged(Added))])
     );
     toggle_listed_file(&fixture, "first.txt");
     assert_eq!(
         read_sorted_staging(&fixture),
-        expected(&[("first.txt", Untracked)])
+        expected_staging_by_path(&[("first.txt", Untracked)])
     );
+
+    std::fs::remove_dir_all(&fixture).unwrap();
+}
+
+#[test]
+fn reads_no_changes_where_there_is_no_work_tree() {
+    let fixture = create_fixture_repository("changed-file-no-work-tree");
+    write_fixture_file(&fixture, "untracked.txt", "new\n");
+
+    assert_eq!(read_changed_files(&fixture.join(".git")).unwrap(), []);
 
     std::fs::remove_dir_all(&fixture).unwrap();
 }

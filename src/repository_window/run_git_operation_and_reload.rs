@@ -9,7 +9,7 @@ impl RepositoryWindow {
     pub fn run_git_operation_and_reload(
         &mut self,
         git_operation: impl FnOnce(&Path) -> Result<(), GitCommandError>,
-    ) -> bool {
+    ) {
         let operation_result = git_operation(&self.repository_path);
         // 失敗した操作でも、フックなどがファイルを書き換えていることがあるので、必ず読み直す。
         let reload_error = match read_repository_snapshot(&self.repository_path) {
@@ -20,8 +20,6 @@ impl RepositoryWindow {
             }
             Err(error) => Some(error),
         };
-        let operation_succeeded = operation_result.is_ok();
         self.last_git_error = operation_result.err().or(reload_error);
-        operation_succeeded
     }
 }

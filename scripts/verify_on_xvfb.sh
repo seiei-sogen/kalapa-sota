@@ -8,6 +8,8 @@ set -euo pipefail
 work_dir=$(realpath -m "${1:?作業ディレクトリを指定する}")
 fixture="$work_dir/fixture-repo"
 export DISPLAY=:99
+# 確認用の git status が index.lock を取り、同時に走るアプリの git add や git reset を失敗させないようにする。
+export GIT_OPTIONAL_LOCKS=0
 app_root=$(cd "$(dirname "$0")/.." && pwd)
 
 rm -rf "$fixture" && mkdir -p "$fixture"
@@ -69,11 +71,14 @@ file_status() { git -C "$fixture" status --porcelain=v1 -- "$1"; }
 [ "$(git -C "$fixture" status --porcelain=v1)" = "$(printf 'MM CHANGELOG.md\n M README.md\n?? memo.txt')" ]
 commit_panel_height=240
 row_height=26
+branch_panel_width=220
 changed_file_row_y() { echo $((HEIGHT - commit_panel_height + row_height * ($1 + 1) + row_height / 2)); }
 xdotool mousemove $((X + 320)) $((Y + $(changed_file_row_y 1))) click 1
 wait_until '[ "$(file_status README.md)" = "M  README.md" ]'
 xdotool mousemove $((X + 320)) $((Y + $(changed_file_row_y 0))) click 1
 wait_until '[ "$(file_status CHANGELOG.md)" = "M  CHANGELOG.md" ]'
+# 描き直す前に押すと、行は前の状態 (MM) のまま git add をもう一度打つので、描き直しを待つ。
+sleep 0.5
 xdotool mousemove $((X + 320)) $((Y + $(changed_file_row_y 0))) click 1
 wait_until '[ "$(file_status CHANGELOG.md)" = " M CHANGELOG.md" ]'
 sleep 1
@@ -82,7 +87,7 @@ echo "status after clicking README.md once and CHANGELOG.md twice:"
 git -C "$fixture" status --porcelain=v1
 
 count_colors_in_fourth_changed_file_row() {
-  import -window "$window" -crop "$((WIDTH - 220))x26+220+$(($(changed_file_row_y 3) - 13))" -format "%k" info:
+  import -window "$window" -crop "$((WIDTH - branch_panel_width))x${row_height}+${branch_panel_width}+$(($(changed_file_row_y 3) - row_height / 2))" -format "%k" info:
 }
 echo "idea" > "$fixture/new-idea.txt"
 sleep 1

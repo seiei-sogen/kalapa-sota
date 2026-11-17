@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Xvfb 上でアプリを起動し、履歴グラフ、ブランチ切り替え、変更一覧のステージ切り替え、
-# ウィンドウに戻ったときの読み直しを確かめる。
+# ウィンドウに戻ったときの読み直し、メッセージを打ってのコミット、コミットの失敗の表示を確かめる。
 # 使い方: scripts/verify_on_xvfb.sh <作業ディレクトリ>
 # 必要なもの: git, Xvfb, xdotool, ImageMagick (import), Vulkan ドライバ (lavapipe で可)
 set -euo pipefail
@@ -14,8 +14,11 @@ app_root=$(cd "$(dirname "$0")/.." && pwd)
 
 rm -rf "$fixture" && mkdir -p "$fixture"
 commit_at() { GIT_AUTHOR_DATE="2026-11-0$1T10:00:00" GIT_COMMITTER_DATE="2026-11-0$1T10:00:00" \
-  git -C "$fixture" -c user.name="$2" -c user.email=dev@example.com -c commit.gpgsign=false commit -q --allow-empty -m "$3"; }
+  git -C "$fixture" -c user.name="$2" commit -q --allow-empty -m "$3"; }
 git -C "$fixture" init -q -b main
+git -C "$fixture" config user.email dev@example.com
+git -C "$fixture" config user.name Alice
+git -C "$fixture" config commit.gpgsign false
 commit_at 1 Alice "Initial commit"
 echo "# Fixture" > "$fixture/README.md" && echo "## 0.1" > "$fixture/CHANGELOG.md"
 git -C "$fixture" add README.md CHANGELOG.md
@@ -28,7 +31,7 @@ commit_at 3 Bob "Add login form"
 commit_at 4 Bob "Validate login input"
 git -C "$fixture" switch -q main
 commit_at 4 Alice "Update dependencies"
-GIT_COMMITTER_DATE="2026-11-05T10:00:00" git -C "$fixture" -c user.name=Alice -c user.email=dev@example.com -c commit.gpgsign=false \
+GIT_COMMITTER_DATE="2026-11-05T10:00:00" git -C "$fixture" \
   merge -q --no-ff feature-a -m "Merge branch 'feature-a'"
 git -C "$fixture" switch -q -c feature-b
 commit_at 6 Dave "Sketch settings page"
@@ -102,3 +105,50 @@ wait_until '[ "$(count_colors_in_fourth_changed_file_row)" -gt 1 ]'
 sleep 1
 import -window root "$work_dir/changes-after-refocus.png"
 echo "colors in the 4th row after refocus: $(count_colors_in_fourth_changed_file_row)"
+
+panel_padding_x=12
+bottom_row_padding_y=8
+input_height=30
+button_width=96
+bottom_row_y=$((Y + HEIGHT - bottom_row_padding_y - input_height / 2))
+commit_button_x=$((X + WIDTH - panel_padding_x - button_width / 2))
+input_text_signature() {
+  import -window "$window" -crop "200x$((input_height - 2))+$((branch_panel_width + panel_padding_x + 2))+$((HEIGHT - bottom_row_padding_y - input_height + 1))" -format "%#" info:
+}
+xdotool mousemove $((X + 320)) $bottom_row_y click 1
+sleep 0.5
+empty_input_signature=$(input_text_signature)
+typed_message="docs: README を更新"
+# xdotool はロケールが UTF-8 でないと日本語の引数を読めない。また、キーマップにない文字は空きキーに一時的に割り当て、
+# 押した直後に割り当てを戻す。gpui は前のキーの描画中だと戻した後のキーマップを読んで文字を落とすので、間をあける。
+LC_ALL=C.UTF-8 xdotool type --delay 300 "$typed_message"
+sleep 1
+import -window root "$work_dir/commit-message-typed.png"
+[ "$(input_text_signature)" != "$empty_input_signature" ] || { echo "typed text is not shown" >&2; exit 1; }
+xdotool mousemove $commit_button_x $bottom_row_y click 1
+wait_until '[ "$(git -C "$fixture" log -1 --format=%s)" = "$typed_message" ]'
+sleep 1
+import -window root "$work_dir/after-commit.png"
+echo "HEAD subject after Commit: $(git -C "$fixture" log -1 --format=%s)"
+echo "files in HEAD: $(git -C "$fixture" show --name-only --format= HEAD | tr '\n' ' ')"
+[ "$(git -C "$fixture" show --name-only --format= HEAD)" = README.md ]
+[ "$(input_text_signature)" = "$empty_input_signature" ] || { echo "input is not empty after commit" >&2; exit 1; }
+
+git_error_banner_pixel() { import -window "$window" -crop "1x1+$((branch_panel_width + 4))+4" -depth 8 -format "%[hex:p{0,0}]" info:; }
+head_before_failing_commit=$(git -C "$fixture" rev-parse HEAD)
+xdotool mousemove $((X + 320)) $bottom_row_y click 1
+xdotool type --delay 80 "nothing staged"
+xdotool mousemove $commit_button_x $bottom_row_y click 1
+wait_until '[ "$(git_error_banner_pixel)" = 5A1D1D ]'
+sleep 1
+import -window root "$work_dir/commit-with-nothing-staged.png"
+[ "$(git -C "$fixture" rev-parse HEAD)" = "$head_before_failing_commit" ]
+[ "$(input_text_signature)" != "$empty_input_signature" ] || { echo "a failed commit cleared the message" >&2; exit 1; }
+echo "banner shown after Commit with nothing staged, message kept"
+xdotool windowfocus "$root_window"
+sleep 0.5
+xdotool windowfocus --sync "$window"
+sleep 1
+[ "$(git_error_banner_pixel)" = 5A1D1D ] || { echo "returning to the window cleared the banner" >&2; exit 1; }
+import -window root "$work_dir/banner-after-refocus.png"
+echo "banner still shown after refocus"

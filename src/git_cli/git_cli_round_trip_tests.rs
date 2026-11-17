@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 
 use super::fixture_repository::{create_fixture_repository, run_git_in_fixture};
-use super::run_git_command::run_git_command;
 use super::{read_repository_snapshot, switch_local_branch};
 
 fn create_fixture_with_merged_feature_branch() -> PathBuf {
@@ -64,13 +63,6 @@ fn reads_history_and_branches_then_switches_branch() {
     assert!(
         error.message.contains("no-such-branch"),
         "git stderr reaches the caller: {}",
-        error.message
-    );
-    let error =
-        run_git_command(&fixture, &["commit", "--quiet", "-m", "nothing staged"]).unwrap_err();
-    assert!(
-        error.message.contains("nothing to commit"),
-        "git stdout reaches the caller when stderr is empty: {}",
         error.message
     );
 

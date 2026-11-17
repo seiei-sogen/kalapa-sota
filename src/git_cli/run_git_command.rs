@@ -19,9 +19,14 @@ pub fn run_git_command(
         })?;
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-        // git commit は、コミットするものがないときの理由を標準出力にだけ書く。
+        // git commit は、コミットするものがないとき status 全体を標準出力に書き、理由はその最後の行に書く。
         let message = if stderr.is_empty() {
-            String::from_utf8_lossy(&output.stdout).trim().to_string()
+            String::from_utf8_lossy(&output.stdout)
+                .lines()
+                .rfind(|line| !line.trim().is_empty())
+                .unwrap_or_default()
+                .trim()
+                .to_string()
         } else {
             stderr
         };

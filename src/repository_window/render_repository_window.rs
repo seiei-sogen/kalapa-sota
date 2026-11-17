@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-use gpui::{Context, Window, div, prelude::*, rgb, uniform_list};
+use gpui::{Context, Window, div, prelude::*, px, rgb, uniform_list};
 
 use super::RepositoryWindow;
 use super::commit_panel::render_commit_panel;
@@ -9,11 +9,16 @@ use super::render_local_branch_panel::render_local_branch_panel;
 use crate::appearance::dark_theme_colors::{
     GIT_ERROR_BACKGROUND, GIT_ERROR_TEXT, PRIMARY_TEXT, WINDOW_BACKGROUND,
 };
+use crate::appearance::repository_window_sizes::GIT_ERROR_BANNER_MAX_HEIGHT;
 
 impl Render for RepositoryWindow {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let git_error_banner = self.last_git_error.as_ref().map(|error| {
+            // フックや push の失敗は何十行にもなることがあるので、高さを抑えてコミット欄を画面外へ押し出さない。
             div()
+                .id("git-error-banner")
+                .max_h(px(GIT_ERROR_BANNER_MAX_HEIGHT))
+                .overflow_y_scroll()
                 .px_3()
                 .py_2()
                 .bg(rgb(GIT_ERROR_BACKGROUND))

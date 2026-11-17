@@ -3,7 +3,7 @@ use gpui::{Context, Div, FontWeight, SharedString, Stateful, div, prelude::*, px
 use super::RepositoryWindow;
 use crate::appearance::branch_lane_color;
 use crate::appearance::dark_theme_colors::{
-    BRANCH_PANEL_BACKGROUND, CURRENT_BRANCH_BACKGROUND, HOVERED_ROW_BACKGROUND, PANEL_BORDER,
+    CURRENT_BRANCH_BACKGROUND, HOVERED_ROW_BACKGROUND, PANEL_BACKGROUND, PANEL_BORDER,
     SECONDARY_TEXT,
 };
 use crate::appearance::repository_window_sizes::{BRANCH_PANEL_WIDTH, ROW_HEIGHT};
@@ -71,7 +71,7 @@ pub fn render_local_branch_panel(
         .flex_shrink_0()
         .w(px(BRANCH_PANEL_WIDTH))
         .h_full()
-        .bg(rgb(BRANCH_PANEL_BACKGROUND))
+        .bg(rgb(PANEL_BACKGROUND))
         .border_r_1()
         .border_color(rgb(PANEL_BORDER))
         .child(

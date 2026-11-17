@@ -1,5 +1,5 @@
 pub const WINDOW_BACKGROUND: u32 = 0x1e1e1e;
-pub const BRANCH_PANEL_BACKGROUND: u32 = 0x252526;
+pub const PANEL_BACKGROUND: u32 = 0x252526;
 pub const PANEL_BORDER: u32 = 0x3c3c3c;
 pub const PRIMARY_TEXT: u32 = 0xd4d4d4;
 pub const SECONDARY_TEXT: u32 = 0x8b8b8b;
@@ -7,3 +7,10 @@ pub const HOVERED_ROW_BACKGROUND: u32 = 0x2a2d2e;
 pub const CURRENT_BRANCH_BACKGROUND: u32 = 0x37373d;
 pub const GIT_ERROR_BACKGROUND: u32 = 0x5a1d1d;
 pub const GIT_ERROR_TEXT: u32 = 0xf2b8b5;
+pub const CHECKED_CHECKBOX: u32 = 0x4fc1ff;
+pub const UNTRACKED_FILE_MARKER: u32 = 0x73c991;
+pub const ADDED_FILE_MARKER: u32 = 0x81b88b;
+pub const MODIFIED_FILE_MARKER: u32 = 0xe2c08d;
+pub const DELETED_FILE_MARKER: u32 = 0xc74e39;
+pub const TYPE_CHANGED_FILE_MARKER: u32 = 0xc586c0;
+pub const CONFLICTED_FILE_MARKER: u32 = 0xe4676b;

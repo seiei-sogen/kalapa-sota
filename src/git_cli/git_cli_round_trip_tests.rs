@@ -1,25 +1,11 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
+use super::fixture_repository::{create_fixture_repository, run_git_in_fixture};
 use super::run_git_command::run_git_command;
 use super::{read_repository_snapshot, switch_local_branch};
 
-fn run_git_in_fixture(fixture: &Path, arguments: &[&str]) {
-    let identity = [
-        "-c",
-        "user.name=Fixture Author",
-        "-c",
-        "user.email=fixture@example.com",
-        "-c",
-        "commit.gpgsign=false",
-    ];
-    run_git_command(fixture, &[&identity[..], arguments].concat()).expect("fixture git command");
-}
-
 fn create_fixture_with_merged_feature_branch() -> PathBuf {
-    let fixture = std::env::temp_dir().join(format!("kalapa-git-cli-test-{}", std::process::id()));
-    let _ = std::fs::remove_dir_all(&fixture);
-    std::fs::create_dir_all(&fixture).unwrap();
-    run_git_in_fixture(&fixture, &["init", "-q", "-b", "main"]);
+    let fixture = create_fixture_repository("git-cli-round-trip");
     run_git_in_fixture(&fixture, &["commit", "-q", "--allow-empty", "-m", "base"]);
     run_git_in_fixture(&fixture, &["switch", "-q", "-c", "feature"]);
     run_git_in_fixture(

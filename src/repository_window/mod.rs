@@ -1,3 +1,4 @@
+mod commit_panel;
 mod commit_row;
 mod create_repository_window;
 mod render_local_branch_panel;

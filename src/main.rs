@@ -3,6 +3,9 @@ mod commit_graph;
 mod git_cli;
 mod repository;
 mod repository_window;
+// コミットパネルが使うまでは未使用なので警告を止める。統合時に外す。
+#[allow(dead_code, unused_imports)]
+mod single_line_text_input;
 
 use std::path::PathBuf;
 

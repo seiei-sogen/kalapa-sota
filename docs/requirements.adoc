@@ -66,7 +66,7 @@ Rust と GPUI で作る Git GUI クライアント。Sourcetree のような操�
 * [ ] リモート一覧の表示
 * [ ] fetch
 * [ ] pull
-* [ ] push
+* [x] push
 * [ ] リモートブランチの表示 / checkout
 
 === Phase 5: 発展的な操作

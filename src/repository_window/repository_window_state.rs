@@ -14,4 +14,5 @@ pub struct RepositoryWindow {
     pub commit_graph: CommitGraphLayout,
     pub last_git_error: Option<GitCommandError>,
     pub commit_message_input: Entity<SingleLineTextInput>,
+    pub push_in_progress: bool,
 }

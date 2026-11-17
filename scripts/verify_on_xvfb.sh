@@ -16,7 +16,6 @@ rm -rf "$fixture" && mkdir -p "$fixture"
 commit_at() { GIT_AUTHOR_DATE="2026-11-0$1T10:00:00" GIT_COMMITTER_DATE="2026-11-0$1T10:00:00" \
   git -C "$fixture" -c user.name="$2" commit -q --allow-empty -m "$3"; }
 git -C "$fixture" init -q -b main
-# アプリの Commit ボタンもこのリポジトリで git commit するので、名前と署名はリポジトリの設定で決める。
 git -C "$fixture" config user.email dev@example.com
 git -C "$fixture" config user.name Alice
 git -C "$fixture" config commit.gpgsign false
@@ -107,7 +106,6 @@ sleep 1
 import -window root "$work_dir/changes-after-refocus.png"
 echo "colors in the 4th row after refocus: $(count_colors_in_fourth_changed_file_row)"
 
-# コミット欄の最下段は、上下に余白を挟んだ入力欄と、右端から余白分内側に置いた Commit ボタン。
 panel_padding_x=12
 bottom_row_padding_y=8
 input_height=30

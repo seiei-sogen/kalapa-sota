@@ -133,7 +133,6 @@ impl EntityInputHandler for SingleLineTextInput {
     ) -> Option<usize> {
         let line_point = self.last_bounds?.localize(&point)?;
         let last_layout = self.last_layout.as_ref()?;
-        // プレースホルダー表示中や、編集後の再描画前は、last_layout が content と食い違う。
         if last_layout.text != self.content {
             return None;
         }

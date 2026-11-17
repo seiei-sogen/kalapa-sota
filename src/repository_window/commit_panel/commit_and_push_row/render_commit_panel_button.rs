@@ -3,7 +3,6 @@ use gpui::{Div, ElementId, SharedString, Stateful, div, prelude::*, px, rgb};
 use crate::appearance::dark_theme_colors::{BUTTON_BACKGROUND, HOVERED_BUTTON_BACKGROUND};
 use crate::appearance::repository_window_sizes::COMMIT_PANEL_BUTTON_WIDTH;
 
-/// ラベルの文字数が変わっても入力欄の幅が揺れないよう、幅を固定する。
 pub fn render_commit_panel_button(
     element_id: impl Into<ElementId>,
     label: impl Into<SharedString>,

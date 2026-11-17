@@ -40,7 +40,6 @@ fn grapheme_boundaries_skip_whole_characters() {
 
 #[test]
 fn ime_cursor_inside_marked_text_maps_to_the_whole_content() {
-    // "fix: " の後ろで "こんに" を変換中に、IME が変換文字列の位置 1..2 ("ん") を選ぶ場合。
     let content = "fix: こんに";
     assert_eq!(
         content_range_from_marked_text_range_utf16(content, 5, &(1..2)),

@@ -7,12 +7,9 @@ pub struct SingleLineTextInput {
     pub(super) focus_handle: FocusHandle,
     pub(super) content: SharedString,
     pub(super) placeholder: SharedString,
-    /// content の UTF-8 バイト位置。
     pub(super) selected_range: Range<usize>,
     pub(super) selection_reversed: bool,
-    /// IME で変換中の範囲。
     pub(super) marked_range: Option<Range<usize>>,
-    /// 直前の描画結果。マウス位置と IME 候補窓の位置を文字位置へ変えるのに使う。
     pub(super) last_layout: Option<ShapedLine>,
     pub(super) last_bounds: Option<Bounds<Pixels>>,
     pub(super) is_selecting: bool,

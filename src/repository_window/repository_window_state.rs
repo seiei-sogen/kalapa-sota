@@ -13,6 +13,5 @@ pub struct RepositoryWindow {
     /// snapshot.commits から作る。snapshot と一緒にしか入れ替えない。
     pub commit_graph: CommitGraphLayout,
     pub last_git_error: Option<GitCommandError>,
-    /// 一度だけ作って使い続ける。作り直すと、IME で変換中の文字とフォーカスが消える。
     pub commit_message_input: Entity<SingleLineTextInput>,
 }

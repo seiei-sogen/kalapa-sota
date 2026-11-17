@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Xvfb 上でアプリを起動し、履歴グラフの画面、ブランチ切り替え、変更一覧のステージ切り替え、
+# Xvfb 上でアプリを起動し、履歴グラフ、ブランチ切り替え、変更一覧のステージ切り替え、
 # ウィンドウに戻ったときの読み直しを確かめる。
 # 使い方: scripts/verify_on_xvfb.sh <作業ディレクトリ>
 # 必要なもの: git, Xvfb, xdotool, ImageMagick (import), Vulkan ドライバ (lavapipe で可)
@@ -67,8 +67,9 @@ echo "current branch after click: $current_branch"
 
 file_status() { git -C "$fixture" status --porcelain=v1 -- "$1"; }
 [ "$(git -C "$fixture" status --porcelain=v1)" = "$(printf 'MM CHANGELOG.md\n M README.md\n?? memo.txt')" ]
-# コミット欄は高さ 240px でウィンドウの下端にあり、CHANGES 見出しの次から 26px ごとに CHANGELOG.md, README.md, memo.txt と並ぶ。
-changed_file_row_y() { echo $((HEIGHT - 240 + 26 + 26 * $1 + 13)); }
+commit_panel_height=240
+row_height=26
+changed_file_row_y() { echo $((HEIGHT - commit_panel_height + row_height * ($1 + 1) + row_height / 2)); }
 xdotool mousemove $((X + 320)) $((Y + $(changed_file_row_y 1))) click 1
 wait_until '[ "$(file_status README.md)" = "M  README.md" ]'
 xdotool mousemove $((X + 320)) $((Y + $(changed_file_row_y 0))) click 1

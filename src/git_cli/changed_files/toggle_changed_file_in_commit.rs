@@ -4,7 +4,6 @@ use crate::git_cli::GitCommandError;
 use crate::git_cli::run_git_command::run_git_command;
 use crate::repository::{ChangedFile, CommitInclusion, decide_commit_inclusion};
 
-/// 全部コミットに入っているファイルは外し、それ以外は全部入れる。
 pub fn toggle_changed_file_in_commit(
     repository_path: &Path,
     changed_file: &ChangedFile,

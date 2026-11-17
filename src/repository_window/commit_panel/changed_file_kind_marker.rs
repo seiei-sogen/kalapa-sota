@@ -11,7 +11,6 @@ pub fn changed_file_kind_marker(staging: &ChangedFileStaging) -> (&'static str, 
         ChangedFileStaging::Unstaged(change_kind) | ChangedFileStaging::Staged(change_kind) => {
             change_kind
         }
-        // 新しく追加してから書き足したファイルを A のまま見せるため、インデックス側の種類を出す。
         ChangedFileStaging::PartiallyStaged { staged, .. } => staged,
     };
     match shown_change_kind {

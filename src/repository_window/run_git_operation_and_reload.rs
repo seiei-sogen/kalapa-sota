@@ -5,7 +5,6 @@ use crate::commit_graph::layout_commit_graph;
 use crate::git_cli::{GitCommandError, read_repository_snapshot};
 
 impl RepositoryWindow {
-    /// git の操作を 1 つ実行してから、リポジトリを読み直す。操作が成功したかを返す。
     // shortcut: git を UI スレッドで同期実行する。status や checkout が遅いリポジトリで画面が固まるなら background_executor へ移す。
     pub fn run_git_operation_and_reload(
         &mut self,

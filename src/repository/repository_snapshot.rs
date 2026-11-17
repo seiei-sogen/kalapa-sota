@@ -1,6 +1,6 @@
 use super::{ChangedFile, Commit, LocalBranch};
 
-/// commits は子が親より先に来る順に並ぶ。changed_files は git status が出した順に並ぶ。
+/// commits は子が親より先に来る順に並ぶ。
 pub struct RepositorySnapshot {
     pub commits: Vec<Commit>,
     pub local_branches: Vec<LocalBranch>,

@@ -3,7 +3,6 @@ use crate::repository::{
     ChangedFile, ChangedFileStaging, FileChangeKind, RepositoryRootRelativePath,
 };
 
-/// `git status --porcelain=v1 -z --no-renames` の出力を読む。git の文字はこの関数の外へ出さない。
 pub fn parse_porcelain_status(output: &str) -> Result<Vec<ChangedFile>, GitCommandError> {
     let change_kind = |letter: u8| match letter {
         b'A' => Some(FileChangeKind::Added),

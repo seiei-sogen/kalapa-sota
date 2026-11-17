@@ -2,7 +2,6 @@ use std::path::PathBuf;
 
 use super::run_git_in_fixture;
 
-/// テストは同じプロセスの中で並列に走るので、テストごとに別のディレクトリを使う。
 pub fn create_fixture_repository(test_name: &str) -> PathBuf {
     let fixture = std::env::temp_dir().join(format!("kalapa-{test_name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&fixture);

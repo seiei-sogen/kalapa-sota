@@ -11,6 +11,7 @@ pub fn read_local_branches(repository_path: &Path) -> Result<Vec<LocalBranch>, G
         &[
             "for-each-ref",
             // refname:short は同名のタグがあると "heads/名前" を返し、git switch が受け付けない。
+            // shortcut: upstream:track は全ブランチについて履歴をたどって数える。ブランチが多いリポジトリで読み直しが遅くなったら、現在のブランチだけ数える。
             "--format=%(HEAD)%1f%(objectname)%1f%(refname:lstrip=2)%1f%(upstream)%1f%(upstream:track,nobracket)",
             "refs/heads",
         ],

@@ -1,3 +1,4 @@
+use std::os::unix::process::CommandExt;
 use std::path::Path;
 use std::process::Command;
 
@@ -7,12 +8,22 @@ pub fn run_git_command(
     repository_path: &Path,
     arguments: &[&str],
 ) -> Result<String, GitCommandError> {
-    let output = Command::new("git")
+    let mut command = Command::new("git");
+    command
         // 認証を端末で尋ねられても GUI からは答えられず、git が待ち続けてしまう。
         .env("GIT_TERMINAL_PROMPT", "0")
         .arg("-C")
         .arg(repository_path)
-        .args(arguments)
+        .args(arguments);
+    // ssh は GIT_TERMINAL_PROMPT を見ずに端末を直接開いて host key やパスフレーズを尋ねるので、端末から切り離して失敗させる。
+    // SAFETY: fork と exec の間で呼ぶのは async-signal-safe な setsid だけ。
+    unsafe {
+        command.pre_exec(|| {
+            libc::setsid();
+            Ok(())
+        });
+    }
+    let output = command
         .output()
         .map_err(|error| GitCommandError {
             message: format!("could not run git: {error}"),

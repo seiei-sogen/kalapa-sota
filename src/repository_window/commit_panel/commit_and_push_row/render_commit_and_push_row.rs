@@ -38,6 +38,9 @@ pub fn render_commit_and_push_row(
                 "push-button",
                 push_button_label(repository_window.push_in_progress, current_branch_tracking),
             )
+            .when(repository_window.push_in_progress, |push_button| {
+                push_button.opacity(0.6).cursor_default()
+            })
             .on_click(cx.listener(|repository_window, _, _, cx| {
                 repository_window.push_current_branch_in_background(cx)
             })),

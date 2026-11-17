@@ -18,6 +18,13 @@ fn publishes_a_branch_without_upstream_then_pushes_a_later_commit() {
         &fixture,
         &["remote", "add", "origin", bare_remote.to_str().unwrap()],
     );
+    run_git_in_fixture(&fixture, &["branch", "other"]);
+    run_git_in_fixture(&fixture, &["push", "-q", "origin", "other"]);
+    let other_on_remote_before = run_git_command(&bare_remote, &["rev-parse", "other"]).unwrap();
+    run_git_in_fixture(&fixture, &["switch", "-q", "other"]);
+    run_git_in_fixture(&fixture, &["commit", "-q", "--allow-empty", "-m", "other work"]);
+    run_git_in_fixture(&fixture, &["switch", "-q", "main"]);
+    run_git_in_fixture(&fixture, &["config", "push.default", "matching"]);
     let read_current_branch_tracking = || -> UpstreamTracking {
         read_local_branches(&fixture)
             .unwrap()
@@ -55,7 +62,23 @@ fn publishes_a_branch_without_upstream_then_pushes_a_later_commit() {
         run_git_command(&fixture, &["rev-parse", "HEAD"]).unwrap(),
         "the bare remote has the second commit"
     );
+    assert_eq!(
+        run_git_command(&bare_remote, &["rev-parse", "other"]).unwrap(),
+        other_on_remote_before,
+        "push.default=matching in the user's config does not push other branches"
+    );
 
     std::fs::remove_dir_all(&fixture).unwrap();
     std::fs::remove_dir_all(&bare_remote).unwrap();
+}
+
+#[test]
+fn a_push_without_any_remote_returns_git_reason() {
+    let fixture = create_fixture_repository("push-without-remote");
+    run_git_in_fixture(&fixture, &["commit", "-q", "--allow-empty", "-m", "first"]);
+
+    let error = push_current_branch(&fixture).unwrap_err();
+    assert!(!error.message.is_empty(), "the banner gets git's reason");
+
+    std::fs::remove_dir_all(&fixture).unwrap();
 }

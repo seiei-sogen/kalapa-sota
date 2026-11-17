@@ -27,6 +27,5 @@
 
 ## 作業の進め方
 
-- 作業は、pstack の `poteto-mode`（ポテトモード）で進める。
-- テストは、superpowers の `test-driven-development` スキルに従って書く。
-  - https://github.com/obra/superpowers/blob/main/skills/test-driven-development/SKILL.md
+- 作業は、`/pstack:poteto-mode` で進める。
+- テストは、`/superpowers:test-driven-development` に従って書く。

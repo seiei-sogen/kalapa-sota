@@ -15,7 +15,7 @@
 
 == PR の順番と依存
 
-PR は 5 つある。着地の順番は次のとおり。
+PR は 5 つある。最後に、PR ではないリリースの作業 REL-1 がある。着地の順番は次のとおり。
 
 [cols="1,4,2,2"]
 |===
@@ -29,34 +29,40 @@ PR は 5 つある。着地の順番は次のとおり。
 | MAC-2
 | タグを打つと、macOS 用のバイナリを GitHub Releases に載せる。README に 1 行のインストール手順を書く。
 | MAC-1
-| 要る。Mac の実機で確かめる。
+| 要る。利用者が Mac の実機で live 1 を実行する。
 
 | WT-1
 | ワークツリーの一覧を、左の列に表示する。
 | なし
-| 要る。左の列のレイアウトが変わる。
+| 要る。左の列のレイアウトが変わる。PR に付けた live のスクリーンショットを見る。
 
 | WT-2
 | ワークツリーの行をクリックすると、ウィンドウがそのワークツリーを開く。
 | WT-1
-| 要る。新しい操作である。
+| 要る。新しい操作である。PR に付けた live のスクリーンショットを見る。
 
 | PULL-1
 | 開いているワークツリーの現在のブランチを、fast-forward だけで pull する。
-| WT-2
-| 要る。新しい操作である。
+| WT-1
+| 要る。新しい操作である。PR に付けた live のスクリーンショットを見る。
+
+| REL-1
+| ワークツリー対応を入れた `v0.2.0` をリリースし、Mac で確かめる。
+| MAC-2、WT-2、PULL-1
+| 利用者が Mac の実機で実行する。
 |===
 
-依存は次の 2 本の列になる。2 本は互いに独立で、どちらも `main` から分岐する。
+依存は次の 2 本の列になる。2 本はどちらも `main` から分岐し、REL-1 で合流する。REL-1 までは、互いに独立に進められる。
 
 ----
-main ─┬─ MAC-1 ─ MAC-2
-      └─ WT-1 ─ WT-2 ─ PULL-1
+main ─┬─ MAC-1 ─ MAC-2 ─────────┐
+      └─ WT-1 ─┬─ WT-2 ─────────┼─ REL-1
+               └─ PULL-1 ───────┘
 ----
 
 2 本の列は、`README.md` と `docs/requirements.adoc` を共有する。README では、MAC-2 が「必要なもの」の macOS の行と新しい節「macOS にインストールする」を触る。WT-1 は「必要なもの」の git のバージョンの行を触る。WT-1、WT-2、PULL-1 は「できること」と「使い方」を触る。`docs/requirements.adoc` では、MAC-2 が「対象環境」を、ほかの 3 つが「ロードマップ」を触る。同じ行は触らない。
 
-PULL-1 は、コードの上では WT-1 と WT-2 に依存しない。それでも WT-2 のあとに置く。理由は 2 つある。ひとつは、`repository_window_state.rs` と検証スクリプトの座標を WT-1 と共有するので、並行に進めると衝突するからである。もうひとつは、「ワークツリーの中で pull する」の確認に WT-2 が要るからである。
+PULL-1 は、WT-1 のあとに置く。`repository_window_state.rs` と検証スクリプトの座標を WT-1 と共有するので、並行に進めると衝突するからである。WT-1 の fixture のワークツリーも、PULL-1 の確認に使う。PULL-1 は WT-2 を待たなくてよい。kalapa は、リンクされたワークツリーのパスを渡して起動すれば、そのワークツリーで git を実行するからである。WT-2 と PULL-1 は、検証スキルの `SKILL.md` と `features/README.md`、`README.md` の別の節を触る。1 つずつ着地させるなら、WT-2 を先にする。
 
 == 決めたこと
 
@@ -173,7 +179,7 @@ PULL-1 は、コードの上では WT-1 と WT-2 に依存しない。それで�
 
 検証::
 * [ ] unit: macOS のジョブで、`cargo test` が Linux と同じ件数 (計画時点で 26 件) を通す。
-* [ ] live: PR のブランチに、テストを 1 つわざと失敗させるコミットを push する。チェックが赤になることを見る。そのコミットを revert し、緑に戻ることを見る。
+* [ ] live: PR のチェック欄からジョブのログを開く。ログに、macOS のランナーの名前と、`test result: ok. 26 passed` が出ている。
 * [ ] perf: 測るのは、ジョブの所要時間。Actions の実行ログで読む。`main` には CI がないので、基準は最初の実行の時間とする。20 分を超えたら不合格とし、`~/.cargo` と `target` のキャッシュを足す。
 
 == MAC-2: タグから macOS 用バイナリをリリースし、インストール手順を書く
@@ -198,7 +204,8 @@ PULL-1 は、コードの上では WT-1 と WT-2 に依存しない。それで�
 sudo mkdir -p /usr/local/bin && curl -fsSL https://github.com/seiei-sogen/kalapa-sota/releases/latest/download/kalapa-aarch64-apple-darwin.tar.gz | sudo tar -xz -C /usr/local/bin
 ----
 * [ ] README に、起動の方法を書く。リポジトリのディレクトリで `kalapa` と打つ。
-* [ ] README の「必要なもの」に、macOS では git が要ることを書く。git がなければ、`xcode-select --install` で Command Line Tools を入れる。Xcode 本体は要らない。
+* [ ] README の「必要なもの」に、macOS では git が要ることを書く。git がなければ、`xcode-select --install` で Command Line Tools を入れる。Xcode 本体は要らない。配るバイナリが Apple Silicon 用だけであることも書く。
+* [ ] README の「開発する」に、リリースの方法を 1 行で書く。`v` で始まるタグを push すると、workflow がリリースを作る。
 
 見える結果::
 * [ ] GitHub の Releases に、`kalapa-aarch64-apple-darwin.tar.gz` が付いたリリースが出る。
@@ -210,15 +217,15 @@ sudo mkdir -p /usr/local/bin && curl -fsSL https://github.com/seiei-sogen/kalapa
 ** `xattr -l /usr/local/bin/kalapa` に `com.apple.quarantine` が出ない。
 ** 作ったリポジトリのディレクトリで `kalapa` と打つと、Gatekeeper のダイアログが出ずに、ウィンドウが手前に出る。
 ** `other` の行をクリックすると、`git branch --show-current` が `other` になる。
-** 入力欄に日本語を IME で打ち、**Commit** を押すと、`git log -1 --format=%s` がそのメッセージになる。
-** ウィンドウを閉じると、プロセスが終わる。
-* [ ] live 1 で外れた項目は、項目ごとに別の PR で直す。直したら `v0.1.0-rc.2` を打ち、live 1 をやり直す。
+* [ ] live 1 の 3 つの項目のどれかが外れたら、別の PR で直す。直したら `v0.1.0-rc.2` を打ち、live 1 をやり直す。
+* [ ] 同じ Mac で、次の 2 つも試す。外れても MAC-2 は止めない。外れたものは、イシューに記録する。入力欄に日本語を IME で打ち、**Commit** を押すと、`git log -1 --format=%s` がそのメッセージになる。ウィンドウを閉じると、プロセスが終わる。
 * [ ] live 2 (マージ後): `main` にタグ `v0.1.0` を打つ。`sudo rm /usr/local/bin/kalapa` のあと、README の 1 行をそのまま貼って実行し、`kalapa` が起動する。
-* [ ] perf: 測るのは、tarball の大きさ。リリースのページで読む。基準は `v0.1.0-rc.1` の大きさとする。50 MB を超えたら不合格とする。デバッグビルドを載せた誤りを、この数字で見つける。
+* [ ] `v0.1.0` ができたら、rc の prerelease とタグを消す。
+* [ ] perf: 測るのは、tarball の大きさ。リリースのページで読む。基準は `v0.1.0-rc.1` の大きさとする。50 MB を超えたら不合格とする。
 
 live 1 は、Mac を持つ人にしかできない。エージェントが進めるときは、利用者の Mac をセッションにつなぐか、利用者に実行を頼む。
 
-macOS で起こりそうな不具合は次のとおり。どれも推測で、live 1 で確かめる。
+macOS で起こりそうな不具合は次のとおり。どれも推測で、Mac の実機で確かめる。
 
 * ウィンドウが端末の後ろに出る。gpui の例は `cx.activate(true)` を呼ぶが、`src/main.rs` は呼んでいない。
 * メニューがないので、Cmd+Q が効かない。ウィンドウを閉じれば終わる。
@@ -255,14 +262,14 @@ pub struct RepositorySnapshot {
 
 // src/repository_window/repository_window_state.rs
 pub struct RepositoryWindow {
-    pub open_worktree_root_path: WorktreeRootPath, // 今の repository_path を置き換える
+    pub opened_worktree_root_path: WorktreeRootPath, // 今の repository_path を置き換える
     // ほかは今のまま
 }
 ----
 
-`open_worktree_root_path` は、起動時に `resolve_worktree_root_path` で決める。この関数は、`git rev-parse --is-inside-work-tree` が `true` なら `git rev-parse --show-toplevel` を返し、そうでなければ `git rev-parse --absolute-git-dir` を返す。引数がサブディレクトリでも、ワークツリーのルートになる。bare リポジトリでは、`git worktree list` の bare の行と同じパスになる。bare でないリポジトリの `.git` の中では、どの行とも一致しないパスになり、● はどの行にも付かない。
+`opened_worktree_root_path` は、起動時に `resolve_worktree_root_path` で決める。この関数は、`git rev-parse --is-inside-work-tree` が `true` なら `git rev-parse --show-toplevel` を返し、そうでなければ `git rev-parse --absolute-git-dir` を返す。引数がサブディレクトリでも、ワークツリーのルートになる。bare リポジトリでは、`git worktree list` の bare の行と同じパスになる。bare でないリポジトリの `.git` の中では、どの行とも一致しないパスになり、● はどの行にも付かない。
 
-「開いているワークツリー」の印は、`worktree.root_path == open_worktree_root_path` で決める。別のフラグは持たない。
+「開いているワークツリー」の印は、`worktree.root_path == opened_worktree_root_path` で決める。別のフラグは持たない。
 
 `git_cli` の関数は、今までどおり `&Path` を受け取る。git は、ワークツリーの中のどのパスでも受け付けるからである。
 
@@ -277,7 +284,7 @@ pub struct RepositoryWindow {
 * [ ] `src/repository_window/sidebar/` (新規): `mod.rs`、`render_sidebar.rs`、`render_worktree_section.rs`、`render_local_branch_section.rs` (`render_local_branch_panel.rs` を移して改名する)
 * [ ] `src/repository_window/` の `mod.rs`、`repository_window_state.rs`、`create_repository_window.rs`、`reread_repository_snapshot.rs`、`run_git_operation_and_reload.rs`、`render_repository_window.rs`
 * [ ] `src/repository_window/repository_window_title.rs` (新規。ルートのパスから、タイトル `kalapa - <ルートのパス>` を作る。)
-* [ ] `commit_panel` の 3 ファイル。`push_current_branch_in_background.rs` は、フィールド `repository_path` を読む。`render_changed_file_row.rs` と `commit_staged_changes_with_typed_message.rs` は、クロージャの引数の名前が `repository_path` なので、名前だけを直す。
+* [ ] `commit_panel` の 3 ファイル。`push_current_branch_in_background.rs` は、フィールド `repository_path` を読む。`render_changed_file_row.rs` と `commit_staged_changes_with_typed_message.rs` は、クロージャの引数の名前が `repository_path` なので、引数の名前を `worktree_root_path` に直す。
 * [ ] `src/appearance/repository_window_sizes.rs` (`BRANCH_PANEL_WIDTH` を `SIDEBAR_WIDTH` に改名する)
 * [ ] `.claude/skills/verify-kalapa/scripts/` の `kalapa_driver.sh`、`create_fixture_repository.sh`、`cleanup_kalapa.sh`、`launch_kalapa.sh`、`doctor_kalapa.sh`
 * [ ] `.claude/skills/verify-kalapa/` の `SKILL.md`、`features/README.md`、`features/view-worktrees.md` (新規)
@@ -285,14 +292,14 @@ pub struct RepositoryWindow {
 * [ ] `README.md`、`docs/requirements.adoc`、`docs/images/repository-window.png`
 
 作る変更::
-コミットは、次の順に分ける。1 と 2 は、画面の動きを変えない。
+コミットは、次の順に分ける。1 は、画面を変えない。2 は、ウィンドウのタイトルがルートのパスになるほかは、画面を変えない。今のタイトルは、渡されたパスそのままで、引数がなければ `kalapa - .` である。
 +
 * [ ] 1. 改名だけ。`render_local_branch_panel.rs` を `sidebar/render_local_branch_section.rs` へ移す。左の列の枠 (幅、境界線、スクロール) を `render_sidebar.rs` へ分ける。`BRANCH_PANEL_WIDTH` を `SIDEBAR_WIDTH` にする。`kalapa_driver.sh` はこの定数を名前で読むので、同じコミットで直す。
-* [ ] 2. `repository_path` を `open_worktree_root_path` に置き換える。`resolve_worktree_root_path` をテストから書き、`main.rs` で起動時に呼ぶ。ウィンドウのタイトルは、`repository_window_title` で `kalapa - <ルートのパス>` にする。先頭の `kalapa - ` は変えない。`launch_kalapa.sh` と `scripts/verify_on_xvfb.sh` が、この先頭でウィンドウを探すからである。`launch_kalapa.sh` は、`state.env` の `REPOSITORY` に、渡されたパスではなく `git rev-parse --show-toplevel` の結果を書く。`doctor_kalapa.sh` がタイトルを `kalapa - $REPOSITORY` と比べるからである。
+* [ ] 2. `repository_path` を `opened_worktree_root_path` に置き換える。`resolve_worktree_root_path` をテストから書き、`main.rs` で起動時に呼ぶ。このコミットのテストは、fixture のサブディレクトリを渡すと fixture のルートの正規化したパスが返ることと、bare リポジトリを渡すとそのリポジトリのパスが返ることを確かめる。`read_worktrees` の返すパスとの比較は、4 で足す。ウィンドウのタイトルは、`repository_window_title` で `kalapa - <ルートのパス>` にする。先頭の `kalapa - ` は変えない。`launch_kalapa.sh` と `scripts/verify_on_xvfb.sh` が、この先頭でウィンドウを探すからである。`launch_kalapa.sh` は、`state.env` の `REPOSITORY` に、渡されたパスではなく、`resolve_worktree_root_path` と同じ決め方のパスを書く。`git rev-parse --show-toplevel` が成功すればその結果、失敗すれば `git rev-parse --absolute-git-dir` の結果である。`doctor_kalapa.sh` がタイトルを `kalapa - $REPOSITORY` と比べるからである。
 * [ ] 3. `parse_worktree_list_porcelain` をテストから書く。入力は `git worktree list --porcelain -z` の出力で、出力は `Vec<Worktree>` である。`locked` と `prunable` と知らない属性は読み飛ばす。`worktree` で始まらないレコードと、`branch` も `detached` も `bare` もないレコードは、`GitCommandError` にする。
 * [ ] 4. `read_worktrees` を足し、`read_repository_snapshot` から呼ぶ。
 * [ ] 5. `render_worktree_section` を足す。見出しは `WORKTREES`。1 行に、印、ディレクトリ名 (ルートのパスの最後の要素)、チェックアウトの表示を出す。チェックアウトの表示は、ブランチ名、`detached <コミット ID の先頭 7 文字>`、`bare` のどれかである。開いているワークツリーには ● を付け、今の現在のブランチと同じ背景と太字にする。この PR では、行をクリックしても何も起きない。`scripts/verify_on_xvfb.sh` のブランチの行の座標を、2 行分 (WORKTREES の見出しと、ワークツリー 1 行) だけ下へずらす。
-* [ ] 6. 検証スキルの fixture を直す。リンクされたワークツリーを 2 つ足す。ひとつは detached の `fixture-repo-detached` である。もうひとつは、新しいブランチ `worktree-review` をチェックアウトした `fixture-repo-worktree-review` である。`worktree-review` は `main` と同じコミットから作り、コミットは足さない。名前の順で `main` の後ろに来るので、今のレシピが使うブランチの行 0 から 3 と、履歴の 7 件は変わらない。既存のブランチをワークツリーに入れてはいけない。`fixture-repo` でそのブランチへ切り替えるレシピ (`switch-branch.md`、`push-current-branch.md`) が壊れるからである。`fixture-repo-worktree-review` には、追跡していないファイル `sub/only-in-worktree-review.txt` を置く。
+* [ ] 6. 検証スキルの fixture を直す。リンクされたワークツリーを 2 つ足す。ひとつは、`main` の先頭のコミットを detached でチェックアウトした `fixture-repo-detached` である。`git log --all` は、ほかのワークツリーの detached HEAD からしか届かないコミットも返すので、ブランチにないコミットをここに作ると、履歴の件数が変わる。もうひとつは、新しいブランチ `worktree-review` をチェックアウトした `fixture-repo-worktree-review` である。`worktree-review` は `main` と同じコミットから作り、コミットは足さない。名前の順で `main` の後ろに来るので、今のレシピが使うブランチの行 0 から 3 と、履歴の 7 件は変わらない。既存のブランチをワークツリーに入れてはいけない。`fixture-repo` でそのブランチへ切り替えるレシピ (`switch-branch.md`、`push-current-branch.md`) が壊れるからである。`fixture-repo-worktree-review` には、追跡していないファイル `sub/only-in-worktree-review.txt` を置く。
 * [ ] 7. `create_fixture_repository.sh` と `cleanup_kalapa.sh` は、`fixture-repo` と `remote.git` に加えて `"$run_dir"/fixture-repo-*` も消す。消さないと、同じ run-dir での 2 回目の `git worktree add` が `already exists` で失敗する。
 * [ ] 8. `kalapa_driver.sh` の `click_branch_row` は、ワークツリーの数に 1 を足した行数だけ下へずらす。足す 1 は、WORKTREES の見出しである。ワークツリーの数は、`git worktree list --porcelain` の `worktree` で始まる行で数える。`click_worktree_row` を足す。行の番号は 0 始まりで、fixture では 0 が `fixture-repo`、1 が `fixture-repo-detached`、2 が `fixture-repo-worktree-review` である。
 * [ ] 9. README の「できること」と「必要なもの」を直す。git は 2.36 以上にする。`docs/requirements.adoc` の「ワークツリー一覧の表示」にチェックを入れる。
@@ -302,12 +309,12 @@ pub struct RepositoryWindow {
 
 検証::
 * [ ] unit: `parse_worktree_list_porcelain_tests` が通る。場合は、ブランチ、detached、bare、`prunable` 付き、`locked` 付き、空白と改行を含むパス、壊れた出力である。
-* [ ] unit: `worktrees_round_trip_tests` が通る。fixture で `git worktree add` したあと、`read_worktrees` が 2 つを返し、チェックアウトが合う。リンクされたワークツリーのサブディレクトリを渡した `resolve_worktree_root_path` が、`read_worktrees` の返すパスと等しい。bare リポジトリを渡した `resolve_worktree_root_path` が、`read_worktrees` の返す bare の行のパスと等しい。ディレクトリを消したワークツリーが、一覧に残る。
+* [ ] unit: `worktrees_round_trip_tests` が通る。fixture で `git worktree add` したあと、`read_worktrees` が 2 つを返し、チェックアウトが合う。リンクされたワークツリーのサブディレクトリを渡した `resolve_worktree_root_path` が、`read_worktrees` の返すパスと等しい。bare リポジトリを渡した `resolve_worktree_root_path` が、`read_worktrees` の返す bare の行のパスと等しい。ディレクトリを消したワークツリーが、一覧に残る。リンクされたワークツリーを 1 つ持つ bare リポジトリで `read_repository_snapshot` を呼ぶと、`worktrees` の先頭が `Bare` で、`changed_files` が空である。
 * [ ] live: Xvfb で `fixture-repo` を開く。スクリーンショットに、WORKTREES の 3 行と、1 行目の ● が写る。`click_branch_row 0` のあと、`git -C fixture-repo branch --show-current` が `feature-a` になる。
 * [ ] live: `fixture-repo-worktree-review/sub` を渡して起動する。● が `fixture-repo-worktree-review` の行に付き、BRANCHES の ● が `worktree-review` に付き、タイトルが `kalapa - <fixture-repo-worktree-review のルートのパス>` になる。`doctor_kalapa.sh` が 0 で終わる。
-* [ ] live: 既存のレシピ `switch-branch.md` と `push-current-branch.md` を、新しい fixture でそのまま実行して通す。
+* [ ] live: 既存のレシピ `view-history.md`、`switch-branch.md`、`push-current-branch.md` を、新しい fixture でそのまま実行して通す。
 * [ ] live: `scripts/verify_on_xvfb.sh` が通る。
-* [ ] perf: 測るのは、読み直し 1 回に足した `git worktree list --porcelain -z` の時間。ワークツリーが 3 つの fixture で 20 回実行し、中央値を取る。先に `main` で、読み直しの 4 つの git コマンド (`log`、`for-each-ref`、`rev-parse --is-inside-work-tree`、`status`) の合計を同じ方法で測り、基準として記録する。足したコマンドの中央値が 20 ms を超えたら不合格とする。読み直しは画面のスレッドで走るからである。
+* [ ] perf: 測るのは、ウィンドウに戻ったときの読み直し 1 回で走る git のプロセスの数。読み直しは画面のスレッドで走るからである。アプリを `GIT_TRACE=<ファイルの絶対パス>` を付けて起動し、`leave_and_return_to_window` の前後で増えた `trace: built-in: git` の行を数える。相対パスを渡すと、git は警告を出すだけでファイルを書かない。先に `main` で数え、基準として記録する。基準は 4 のはずである (`log`、`for-each-ref`、`rev-parse --is-inside-work-tree`、`status`)。WT-1 では 5 になる。6 以上なら不合格とする。
 
 == WT-2: ワークツリーをクリックして、ウィンドウで開く
 
@@ -323,24 +330,28 @@ pub struct RepositoryWindow {
 * [ ] `README.md`、`docs/requirements.adoc`
 
 作る変更::
-* [ ] `RepositoryWindow::open_worktree_in_window` を足す。クリックされたワークツリーのパスで `read_repository_snapshot` を呼ぶ。成功したら、`open_worktree_root_path`、`snapshot`、`commit_graph` を入れ替え、`last_git_error` を消し、ウィンドウのタイトルを WT-1 の `repository_window_title` で変える。失敗したら、何も入れ替えずに、エラーを赤い帯に出す。先に読んでから入れ替えるので、ディレクトリを消したワークツリーの行をクリックしても、ウィンドウは元のワークツリーを開いたままになる。bare の行は読めるので、クリックすると開く。履歴とブランチが出て、CHANGES は空になる。
+* [ ] `RepositoryWindow::open_worktree_in_window` を足す。クリックされたワークツリーのパスで `read_repository_snapshot` を呼ぶ。成功したら、`opened_worktree_root_path`、`snapshot`、`commit_graph` を入れ替え、`last_git_error` を消し、ウィンドウのタイトルを WT-1 の `repository_window_title` で変える。失敗したら、何も入れ替えずに、エラーを赤い帯に出す。先に読んでから入れ替えるので、ディレクトリを消したワークツリーの行をクリックしても、ウィンドウは元のワークツリーを開いたままになる。bare の行は読めるので、クリックすると開く。履歴とブランチが出て、CHANGES は空になる。
 * [ ] `SKILL.md` に、`git_in_repository` と `record_git_state` は起動時のパスに対して働き、開いているワークツリーには付いていかないことを書く。ほかのワークツリーの状態は、`git -C <パス>` で読む。
 * [ ] ワークツリーの行に、クリック、ホバーの背景、ポインタのカーソルを付ける。
-* [ ] コミットメッセージの入力欄の文字は、切り替えても残す。打った文字を失わないためである。
-* [ ] push の途中で切り替えたときは、push が終わると、そのとき開いているワークツリーを読み直す。push の失敗は、そのときの赤い帯に出る。
 * [ ] README に「ワークツリーを開く」の節を足す。`docs/requirements.adoc` の「ワークツリー間の切り替え」にチェックを入れる。
+
+変えないこと::
+次の 2 つは、今のコードがすでにそう動く。WT-2 では手を入れない。
++
+* コミットメッセージの入力欄の文字は、切り替えても残る。読み直しは入力欄を消さない。
+* push の途中で切り替えると、push が終わったときに、そのとき開いているワークツリーを読み直す。push の失敗は、そのときの赤い帯に出る。
 
 見える結果::
 * [ ] WORKTREES の行をクリックすると、● がその行へ移り、コミット履歴、BRANCHES、CHANGES、タイトルがそのワークツリーのものになる。
 * [ ] そのあと BRANCHES の行をクリックすると、開いているワークツリーのブランチが切り替わる。
 
 検証::
-* [ ] unit: `worktrees_round_trip_tests` に足す。リンクされたワークツリーのパスで `switch_local_branch` を呼ぶと、そのワークツリーの現在のブランチだけが変わる。メインのワークツリーが使っているブランチへの `switch_local_branch` は `Err` を返し、どちらの HEAD も動かない。リンクされたワークツリーのパスで読んだ `read_repository_snapshot` は、そのワークツリーのブランチを現在のブランチとし、そのワークツリーの変更だけを返す。
+* [ ] unit: git の前提を固定するテストを `worktrees_round_trip_tests` に足す。このテストは、WT-2 のコードを書く前から通る。先に赤くなることはない。WT-2 の新しいコードの証拠は、live と perf である。場合は次の 3 つ。リンクされたワークツリーのパスで `switch_local_branch` を呼ぶと、そのワークツリーの現在のブランチだけが変わる。メインのワークツリーが使っているブランチへの `switch_local_branch` は `Err` を返し、どちらの HEAD も動かない。リンクされたワークツリーのパスで読んだ `read_repository_snapshot` は、そのワークツリーのブランチを現在のブランチとし、そのワークツリーの変更だけを返す。
 * [ ] live: `click_worktree_row 2` で `fixture-repo-worktree-review` を開く。● が移り、BRANCHES の ● が `worktree-review` になり、タイトルが `kalapa - <fixture-repo-worktree-review のルートのパス>` になる。CHANGES には `sub/only-in-worktree-review.txt` の 1 行だけが出る。
 * [ ] live: 続けて `hotfix` の行 (`click_branch_row 2`) をクリックする。`git -C fixture-repo-worktree-review branch --show-current` が `hotfix` になり、`git -C fixture-repo branch --show-current` は `main` のままである。
 * [ ] live: 続けて `main` の行 (`click_branch_row 3`) をクリックする。赤い帯に `already used by worktree` が出て、どちらの HEAD も動かない。
 * [ ] live: `fixture-repo-detached` のディレクトリを消してから、その行 (`click_worktree_row 1`) をクリックする。赤い帯にエラーが出て、● は動かない。
-* [ ] perf: 測るのは、ワークツリーのクリック 1 回で走る git のプロセスの数。アプリを `GIT_TRACE=<ファイルの絶対パス>` を付けて起動し、クリックの前後で増えた `trace: built-in: git` の行を数える。相対パスを渡すと、git は警告を出すだけでファイルを書かない。基準は、WT-1 のあとの、ウィンドウに戻ったときの読み直しの数 (5) とする。クリック 1 回が基準を超えたら不合格とする。
+* [ ] perf: 測るのは、ワークツリーのクリック 1 回で走る git のプロセスの数。数え方は WT-1 の perf と同じで、`click_worktree_row` の前後で数える。基準は、WT-1 の perf で数えた読み直しの数 (5) とする。クリック 1 回が基準を超えたら不合格とする。
 
 == PULL-1: 現在のブランチを fast-forward だけで pull する
 
@@ -366,15 +377,15 @@ pub struct RepositoryWindow {
 `bool` を 2 つ持つと、push と pull が同時に走っている状態を書けてしまう。`Option<RemoteOperation>` なら、走っているのは 1 つだけである。
 
 依存::
-* [ ] WT-2 がマージ済みである。
+* [ ] WT-1 がマージ済みである。
 
 編集するファイル::
 * [ ] `src/git_cli/local_branches/` の `pull_current_branch_fast_forward_only.rs` (新規)、`pull_current_branch_fast_forward_only_round_trip_tests.rs` (新規)、`mod.rs`
 * [ ] `src/git_cli/mod.rs`
 * [ ] `src/repository_window/remote_operation.rs` (新規)、`repository_window_state.rs`、`create_repository_window.rs`、`mod.rs`
-* [ ] `src/repository_window/commit_panel/commit_and_push_row/` を `commit_pull_push_row/` に改名する。中の `render_commit_and_push_row.rs` は `render_commit_pull_push_row.rs` に、`push_current_branch_in_background.rs` は `run_remote_operation_in_background.rs` にする。`pull_button_label.rs` と `pull_button_label_tests.rs` を足す。`push_button_label.rs` と `push_button_label_tests.rs` を直す。
+* [ ] `src/repository_window/commit_panel/commit_and_push_row/` を `commit_pull_push_row/` に改名する。中の `render_commit_and_push_row.rs` は `render_commit_pull_push_row.rs` に、`push_current_branch_in_background.rs` は `run_remote_operation_in_background.rs` にする。`push_button_label.rs` とそのテストは変えない。
 * [ ] `src/repository_window/commit_panel/mod.rs`、`render_commit_panel.rs`
-* [ ] `.claude/skills/verify-kalapa/` の `scripts/kalapa_driver.sh`、`SKILL.md`、`features/README.md`、`features/push-current-branch.md`、`features/pull-current-branch.md` (新規)
+* [ ] `.claude/skills/verify-kalapa/` の `scripts/kalapa_driver.sh`、`SKILL.md`、`features/README.md`、`features/pull-current-branch.md` (新規)
 * [ ] `scripts/verify_on_xvfb.sh` (**Commit** のボタンの座標だけを直す。このスクリプトが確かめる範囲は広げない。)
 * [ ] `README.md`、`docs/requirements.adoc`
 
@@ -383,38 +394,50 @@ pub struct RepositoryWindow {
 +
 * [ ] 1. `push_in_progress: bool` を `remote_operation_in_progress: Option<RemoteOperation>` に置き換える。`push_current_branch_in_background` を、`RemoteOperation` を受け取る `run_remote_operation_in_background` に置き換える。ディレクトリとファイルを改名する。このコミットの `RemoteOperation` は、`Push` だけを持つ。`Pull` は 4 で足す。
 * [ ] 2. `pull_current_branch_fast_forward_only` をテストから書く。実行するのは `git -c advice.diverging=false pull --no-rebase --ff-only --quiet` である。`--no-rebase` は、古い git が `pull.rebase=true` を `--ff-only` より優先しないように付ける。
-* [ ] 3. `pull_button_label` をテストから書く。表示は次の表のとおり。
-* [ ] 4. `RemoteOperation` に `Pull` を足し、**Pull** のボタンを足す。push か pull の途中は、両方のボタンを薄くし、押しても何もしない。
-* [ ] 5. `push_button_label` から `↓M` を外す。取り込んでいないコミットの数は、**Pull** のボタンが出す。
-* [ ] 6. 検証スクリプトを直す。`click_pull_button` を足し、`click_commit_button` をボタン 1 つ分だけ左へずらす。
-* [ ] 7. README の「push する」の表を直し、「pull する」の節を足す。`docs/requirements.adoc` の「pull」にチェックを入れる。
+* [ ] 3. `RemoteOperation` に `Pull` を足し、**Pull** のボタンを足す。表示は `Pull` と `Pulling…` の 2 つで、`render_commit_pull_push_row` の中で決める。表示のための関数は作らない。push か pull の途中は、両方のボタンを薄くし、押しても何もしない。`push_button_label` には、今までどおり push の途中かどうかを渡す。
+* [ ] 4. 検証スクリプトを直す。`click_pull_button` を足し、`click_commit_button` をボタン 1 つ分だけ左へずらす。
+* [ ] 5. README に「pull する」の節を足す。`docs/requirements.adoc` の「pull」にチェックを入れる。
 
 [cols="1,3"]
 |===
 | **Pull** の表示 | 意味
 
 | Pull
-| 取り込んでいないコミットがない。または、上流ブランチがないか、ブランチをチェックアウトしていない。押すと、git の返事が出る。
-
-| Pull ↓M
-| 上流ブランチに、取り込んでいないコミットが M 個ある。数は、最後に fetch、pull、push をした時点のものである。
+| ふだんの表示。押すと、上流ブランチを fetch し、fast-forward で取り込む。上流ブランチがないときと、ブランチをチェックアウトしていないときは、git が断り、その理由が赤い帯に出る。
 
 | Pulling…
 | pull の途中。押しても何もしない。
 |===
+
+**Pull** には、取り込んでいないコミットの数を出さない。kalapa は fetch をしないので、その数は、利用者が端末で fetch したあとにしか変わらない。同じ数は、今の **Push** の `↓M` に出ている。**Push** の表示は変えない。
 
 見える結果::
 * [ ] **Pull** を押すと、上流ブランチのコミットが履歴の上に出る。
 * [ ] fast-forward できないときは、赤い帯に `fatal: Not possible to fast-forward, aborting.` が出て、作業ツリーは変わらない。
 
 検証::
-* [ ] unit: `pull_button_label_tests` と、直した `push_button_label_tests` が通る。
 * [ ] unit: `pull_current_branch_fast_forward_only_round_trip_tests` が通る。場合は次の 4 つ。リモートに新しいコミットがあれば、HEAD がリモートの先頭と等しくなる。`pull.rebase=true` で枝分かれしていれば `Err` を返し、HEAD は動かず、`.git/rebase-merge` ができない。上流ブランチがなければ `Err` を返す。リンクされたワークツリーで呼ぶと、そのワークツリーのブランチだけが進む。
 * [ ] live: 別の clone から bare リモートの `main` に、`git commit --allow-empty` で作ったコミットを push する。fixture は `README.md`、`CHANGELOG.md`、`notes.txt` に未コミットの変更を持つ。リモートのコミットがこれらを触ると、git が fast-forward を断るからである。kalapa で **Pull** を押す。`git -C fixture-repo rev-parse HEAD` が `git -C remote.git rev-parse main` と等しくなり、新しいコミットが履歴の一番上に出る。
 * [ ] live: ローカルとリモートに別々のコミットを作ってから **Pull** を押す。赤い帯に `Not possible to fast-forward` が出て、`git rev-parse HEAD` は変わらない。
 * [ ] live: `remote.origin.uploadpack` に `sleep 3; git-upload-pack` を設定する。呼ばれた回数をファイルに書き足す `pre-push` フックを置く。`scripts/verify_on_xvfb.sh` が push の二重実行を確かめるのに使っているフックと同じ形である。**Pull** を押す。3 秒の間、ボタンが `Pulling…` と出る。その間に CHANGES の行をクリックすると、ステージが切り替わる。その間に **Push** を押しても、フックの呼ばれた回数は 0 のままである。
-* [ ] live: `click_worktree_row 2` で `fixture-repo-worktree-review` を開く。**Push** (表示は `Publish`) を押して `worktree-review` を公開する。別の clone から、そのブランチに空のコミットを push する。**Pull** を押すと、`git -C fixture-repo-worktree-review rev-parse HEAD` が `git -C remote.git rev-parse worktree-review` と等しくなる。`git -C fixture-repo rev-parse HEAD` は変わらない。
-* [ ] perf: 測るのは、ウィンドウに戻ったときの読み直し 1 回で走る git のプロセスの数。数え方は WT-2 と同じ。基準は、PULL-1 の前の `main` の数 (5) とする。1 つでも増えたら不合格とする。**Pull** の表示は、すでに読んでいる上流との差から作れるからである。
+* [ ] live: `fixture-repo-worktree-review` を渡して kalapa を起動する。WT-2 が着地していれば、`fixture-repo` を開いてから `click_worktree_row 2` で開いてもよい。**Push** (表示は `Publish`) を押して `worktree-review` を公開する。別の clone から、そのブランチに空のコミットを push する。**Pull** を押すと、`git -C fixture-repo-worktree-review rev-parse HEAD` が `git -C remote.git rev-parse worktree-review` と等しくなる。`git -C fixture-repo rev-parse HEAD` は変わらない。
+* [ ] live: `scripts/verify_on_xvfb.sh` が通る。既存のレシピ `commit-staged-changes.md` と `push-current-branch.md` を、そのまま実行して通す。**Commit** のボタンの座標が動くからである。
+* [ ] perf: 測るのは、ウィンドウに戻ったときの読み直し 1 回で走る git のプロセスの数。数え方は WT-1 の perf と同じ。基準は、PULL-1 の前の `main` の数 (5) とする。1 つでも増えたら不合格とする。PULL-1 は、読み直しに何も足さないからである。
+
+== REL-1: ワークツリー対応を入れた版をリリースし、Mac で確かめる
+
+REL-1 は PR ではない。コードは変えない。`v0.1.0` は MAC-2 の時点の `main` から作るので、ワークツリーと pull を含まない。2 つの依頼が利用者の Mac の上でそろうことを、ここで確かめる。
+
+依存::
+* [ ] MAC-2、WT-2、PULL-1 がマージ済みである。
+
+作業::
+* [ ] `main` にタグ `v0.2.0` を打って push する。workflow がリリースを作る。
+* [ ] Mac で、README の 1 行をそのまま実行する。
+
+検証::
+* [ ] live: Mac で、捨ててよいリポジトリを作る。`mktemp -d` の中に bare リモートを作り、それを clone し、`git worktree add` でリンクされたワークツリーを 1 つ足す。clone のディレクトリで `kalapa` と打つ。WORKTREES に 2 行が出る。2 行目をクリックすると、● が移る。
+* [ ] live: 別の clone から bare リモートに空のコミットを push する。kalapa で **Pull** を押すと、開いているワークツリーの `git rev-parse HEAD` がリモートの先頭と等しくなる。
 
 == 範囲外
 
@@ -423,7 +446,7 @@ pub struct RepositoryWindow {
 * ワークツリーの追加、削除、ロック、アンロック、prune。
 * `.app` と `.dmg`、Apple の署名と公証、Finder からの起動、リポジトリを選ぶ画面。
 * Intel の Mac 用のバイナリ、Homebrew、Linux 用のバイナリ。
-* fetch だけのボタン。リモートに増えたコミットの数は、pull か push をするまで **Pull ↓M** に出ない。
+* fetch だけのボタン。リモートに増えたコミットの数は、pull か push をするまで画面に出ない。
 * マージや rebase を伴う pull と、衝突の解消。
 * ほかのワークツリーが使っているブランチの印。
 * ワークツリーごとに別のウィンドウを開くこと。
@@ -432,6 +455,7 @@ pub struct RepositoryWindow {
 == 証明できていないこと
 
 * kalapa が macOS でビルドでき、動くこと。MAC-1 と MAC-2 の live 1 で確かめる。
+* 利用者の Mac が Apple Silicon であること。Intel なら、「配るのは Apple Silicon 用だけにする」の決定を見直し、MAC-2 で `x86_64-apple-darwin` もビルドする。
 * GitHub の macOS ランナーに Metal のツールチェーンが入っていること。入っていなければ、MAC-1 に書いた 2 つの直し方を順に試す。
 * エージェントの GitHub の権限で、`.github/workflows/` の下のファイルを push できること。断られたら、利用者が push するか、権限を足す。
 * git 2.36 より前で `-z` が使えないこと。検索で読んだだけである。README の「必要なもの」を 2.36 以上にして済ませる。

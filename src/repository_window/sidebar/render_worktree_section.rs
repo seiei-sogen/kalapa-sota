@@ -1,7 +1,7 @@
 use gpui::{Div, FontWeight, div, prelude::*, px, rgb};
 
 use super::worktree_checkout_label::worktree_checkout_label;
-use crate::appearance::dark_theme_colors::{CURRENT_BRANCH_BACKGROUND, SECONDARY_TEXT};
+use crate::appearance::dark_theme_colors::{CURRENT_SIDEBAR_ROW_BACKGROUND, SECONDARY_TEXT};
 use crate::appearance::repository_window_sizes::ROW_HEIGHT;
 use crate::repository_window::RepositoryWindow;
 
@@ -20,7 +20,7 @@ pub fn render_worktree_section(repository_window: &RepositoryWindow) -> Div {
             .h(px(ROW_HEIGHT))
             .px_3()
             .when(is_opened_worktree, |row| {
-                row.bg(rgb(CURRENT_BRANCH_BACKGROUND))
+                row.bg(rgb(CURRENT_SIDEBAR_ROW_BACKGROUND))
                     .font_weight(FontWeight::BOLD)
             })
             .child(

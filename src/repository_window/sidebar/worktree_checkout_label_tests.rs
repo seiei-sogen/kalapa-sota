@@ -16,4 +16,8 @@ fn labels_each_worktree_by_what_it_checks_out() {
         "detached 0123456"
     );
     assert_eq!(worktree_checkout_label(&WorktreeCheckout::Bare), "bare");
+    assert_eq!(
+        worktree_checkout_label(&WorktreeCheckout::UnreadableHead),
+        "unreadable HEAD"
+    );
 }

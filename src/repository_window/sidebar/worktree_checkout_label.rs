@@ -8,5 +8,6 @@ pub fn worktree_checkout_label(checkout: &WorktreeCheckout) -> String {
             head_commit_id.0.get(..7).unwrap_or(&head_commit_id.0)
         ),
         WorktreeCheckout::Bare => "bare".to_string(),
+        WorktreeCheckout::UnreadableHead => "unreadable HEAD".to_string(),
     }
 }

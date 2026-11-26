@@ -1,6 +1,6 @@
 # View worktrees
 
-The WORKTREES section at the top of the left column lists every worktree of the repository, one row each, in `git worktree list` order. A row shows a mark, the directory name, and what the worktree checks out: a branch name, `detached` and the first 7 characters of the commit ID, or `bare`. The worktree the window has open has ●, a highlighted row, and bold text. BRANCHES sits below it.
+The WORKTREES section at the top of the left column lists every worktree of the repository, one row each, in `git worktree list` order. A row shows a mark, the directory name, and what the worktree checks out: a branch name, `detached` and the first 7 characters of the commit ID, `bare`, or `unreadable HEAD` when git cannot resolve the worktree's HEAD. The worktree the window has open has ●, a highlighted row, and bold text. BRANCHES sits below it.
 
 ## Sub-features
 

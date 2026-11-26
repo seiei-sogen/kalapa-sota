@@ -2,7 +2,7 @@ use gpui::{Context, Div, FontWeight, SharedString, div, prelude::*, px, rgb};
 
 use crate::appearance::branch_lane_color;
 use crate::appearance::dark_theme_colors::{
-    CURRENT_BRANCH_BACKGROUND, HOVERED_ROW_BACKGROUND, SECONDARY_TEXT,
+    CURRENT_SIDEBAR_ROW_BACKGROUND, HOVERED_ROW_BACKGROUND, SECONDARY_TEXT,
 };
 use crate::appearance::repository_window_sizes::ROW_HEIGHT;
 use crate::git_cli::switch_local_branch;
@@ -39,7 +39,7 @@ pub fn render_local_branch_section(
                 .cursor_pointer()
                 .hover(|row| row.bg(rgb(HOVERED_ROW_BACKGROUND)))
                 .when(branch.is_current, |row| {
-                    row.bg(rgb(CURRENT_BRANCH_BACKGROUND))
+                    row.bg(rgb(CURRENT_SIDEBAR_ROW_BACKGROUND))
                         .font_weight(FontWeight::BOLD)
                 })
                 .on_click(cx.listener(move |repository_window, _, _, cx| {

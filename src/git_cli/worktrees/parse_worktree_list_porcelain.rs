@@ -27,18 +27,21 @@ pub fn parse_worktree_list_porcelain(output: &str) -> Result<Vec<Worktree>, GitC
             };
             let checkout = if attribute_value("bare").is_some() {
                 Some(WorktreeCheckout::Bare)
-            } else if let Some(branch_refname) = attribute_value("branch") {
-                branch_refname
-                    .strip_prefix("refs/heads/")
-                    .map(|branch_name| WorktreeCheckout::Branch {
-                        branch_name: branch_name.to_string(),
-                    })
             } else if attribute_value("detached").is_some() {
                 attribute_value("HEAD").map(|head_commit_id| WorktreeCheckout::DetachedHead {
                     head_commit_id: CommitId(head_commit_id.to_string()),
                 })
             } else {
-                None
+                // HEAD が壊れたワークツリーは branch も detached も持たない。1 つ壊れただけで、リポジトリ全体を開けなくしない。
+                Some(
+                    attribute_value("branch")
+                        .and_then(|branch_refname| branch_refname.strip_prefix("refs/heads/"))
+                        .map_or(WorktreeCheckout::UnreadableHead, |branch_name| {
+                            WorktreeCheckout::Branch {
+                                branch_name: branch_name.to_string(),
+                            }
+                        }),
+                )
             }
             .ok_or_else(unexpected_record)?;
             Ok(Worktree {

@@ -120,6 +120,28 @@ fn keeps_paths_with_spaces_and_newlines_as_is() {
     );
 }
 
+// git は、HEAD を解決できないワークツリーを worktree と HEAD だけのレコードで返す。
+#[test]
+fn reads_a_head_that_is_not_a_branch_or_a_commit_as_unreadable_instead_of_failing_the_list() {
+    let unresolved_head = format!("HEAD {}", "0".repeat(40));
+    let output = worktree_list_porcelain_output(&[
+        &["worktree /repos/broken-head", &unresolved_head],
+        &[
+            "worktree /repos/head-on-a-tag",
+            &unresolved_head,
+            "branch refs/tags/v1",
+        ],
+    ]);
+
+    assert_eq!(
+        parse_worktree_list_porcelain(&output).unwrap(),
+        [
+            worktree("/repos/broken-head", WorktreeCheckout::UnreadableHead),
+            worktree("/repos/head-on-a-tag", WorktreeCheckout::UnreadableHead),
+        ]
+    );
+}
+
 #[test]
 fn rejects_records_it_cannot_read() {
     let head = format!("HEAD {HEAD_COMMIT_ID}");
@@ -127,10 +149,6 @@ fn rejects_records_it_cannot_read() {
         (
             "a record that does not start with worktree",
             vec![head.as_str(), "branch refs/heads/main"],
-        ),
-        (
-            "a record without branch, detached, or bare",
-            vec!["worktree /repos/main", head.as_str()],
         ),
         (
             "a detached record without HEAD",

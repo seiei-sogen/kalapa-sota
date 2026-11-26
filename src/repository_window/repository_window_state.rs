@@ -1,5 +1,6 @@
 use gpui::Entity;
 
+use super::RemoteOperation;
 use crate::commit_graph::CommitGraphLayout;
 use crate::git_cli::GitCommandError;
 use crate::repository::{RepositorySnapshot, WorktreeRootPath};
@@ -12,5 +13,5 @@ pub struct RepositoryWindow {
     pub commit_graph: CommitGraphLayout,
     pub last_git_error: Option<GitCommandError>,
     pub commit_message_input: Entity<SingleLineTextInput>,
-    pub push_in_progress: bool,
+    pub remote_operation_in_progress: Option<RemoteOperation>,
 }

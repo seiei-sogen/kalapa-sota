@@ -27,7 +27,7 @@ impl RepositoryWindow {
             snapshot,
             last_git_error: None,
             commit_message_input: cx.new(|cx| SingleLineTextInput::new("Commit message", cx)),
-            push_in_progress: false,
+            remote_operation_in_progress: None,
         }
     }
 }

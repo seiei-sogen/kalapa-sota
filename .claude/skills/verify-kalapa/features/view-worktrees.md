@@ -25,7 +25,6 @@ Preconditions:
 
 ## Gotchas
 
-- Clicking a worktree row does nothing yet.
 - A name wider than the column is clipped without an ellipsis. Tell the fixture rows apart by the checkout label.
 - `REPOSITORY` in `state.env` is the resolved worktree root, not the path passed to `launch_kalapa.sh`.
 - `click_branch_row` counts worktrees with `git worktree list` at click time. After adding or removing a worktree, return to the window first, or the click lands one row off.

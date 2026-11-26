@@ -38,7 +38,7 @@ Every click writes to the repository the window has open. Open only the fixture 
 "$SCRIPTS/doctor_kalapa.sh" "$RUN_DIR"
 ```
 
-It runs six read-only checks. They confirm that the Xvfb and the app are the ones this run started, that the window title matches the repository, that the binary is newer than every source file, that stderr has no panic, and that the window is drawn. Exit code 0 means the instance is worth driving. Run it first whenever anything looks off.
+It runs six read-only checks. They confirm that the Xvfb and the app are the ones this run started, that the window title matches the repository, that the binary is newer than every source file, that stderr has no panic, and that the window is drawn. Exit code 0 means the instance is worth driving. Run it first whenever anything looks off. The title check compares against the worktree `launch_kalapa.sh` opened, so it fails after `click_worktree_row` opens another worktree.
 
 ## Drive
 
@@ -50,7 +50,7 @@ This defines the following functions in the current shell.
 
 | Function | Action |
 | --- | --- |
-| `click_worktree_row <i>` | Click the i-th worktree in WORKTREES (0-based, `git worktree list` order, main worktree first). The click does nothing yet. |
+| `click_worktree_row <i>` | Click the i-th worktree in WORKTREES (0-based, `git worktree list` order, main worktree first). The window opens that worktree. |
 | `click_branch_row <i>` | Click the i-th branch in BRANCHES (0-based, sorted by name). |
 | `click_changed_file_row <i>` | Click the i-th row in CHANGES (0-based, `git status --porcelain` order, untracked last). |
 | `click_commit_message_input` | Click the message input. This focuses it. |
@@ -62,7 +62,9 @@ This defines the following functions in the current shell.
 | `wait_until '<shell condition>'` | Poll up to 30 s. |
 | `capture_screenshot <name>` | Save `$EVIDENCE_DIR/<name>.png`. |
 | `record_git_state <name>` | Save status, the last 3 commits, and `branch -vv` to `$EVIDENCE_DIR/<name>.git.txt`. |
-| `git_in_repository <args>` | Run git in the open repository without taking `index.lock`. |
+| `git_in_repository <args>` | Run git in the worktree `launch_kalapa.sh` opened, without taking `index.lock`. |
+
+`git_in_repository` and `record_git_state` run git in `REPOSITORY` from `state.env`, the worktree `launch_kalapa.sh` opened. They do not follow `click_worktree_row`. Read another worktree with `git -C <path>`.
 
 After each click, wait on git with `wait_until`, not a fixed sleep. Sleep about 1 s before a screenshot so the repaint lands.
 

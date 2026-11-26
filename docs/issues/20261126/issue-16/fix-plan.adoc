@@ -118,6 +118,12 @@ fixture は `create_fixture_repository` で作る。この関数は、一時デ�
 * ほかのワークツリーが使っているブランチの印。
 * `scripts/verify_on_xvfb.sh` が確かめる範囲を広げること。
 
+== 計画と違うこと
+
+* コミット 4 のあとも、`cargo build` は dead code の警告を 1 つ出す。`RepositorySnapshot` の `worktrees` を読むのは、コミット 5 の `render_worktree_section` だからである。警告はコミット 5 で消える。`#[allow]` は付けていない。
+* コミット 6 で、`SKILL.md` の Cleanup の文と、`push-current-branch.md` の Gotchas の文も直した。`cleanup_kalapa.sh` がワークツリーも消すようになり、「fixture と bare リモートだけを消す」が正しくなくなったからである。
+* コミット 8 で、README の「ビルドして起動する」に、リンクされたワークツリーの中のパスを渡すとそのワークツリーを開く、という 1 文を足した。
+
 == セルフレビュー
 
 === 1回目

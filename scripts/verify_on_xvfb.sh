@@ -64,8 +64,8 @@ sleep 1
 import -window root "$work_dir/history-before-checkout.png"
 
 eval "$(xdotool getwindowgeometry --shell "$window")"
-# BRANCHES 見出しの次から 26px ごとに feature-a, feature-b, hotfix, main と並ぶ。
-xdotool mousemove $((X + 60)) $((Y + 26 + 26 + 13)) click 1
+# WORKTREES の見出しとワークツリー 1 行、BRANCHES の見出しの次から、26px ごとに feature-a, feature-b, hotfix, main と並ぶ。
+xdotool mousemove $((X + 60)) $((Y + 26 * 3 + 26 + 13)) click 1
 wait_until '[ "$(git -C "$fixture" branch --show-current)" = feature-b ]'
 sleep 1
 import -window root "$work_dir/history-after-checkout.png"

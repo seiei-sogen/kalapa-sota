@@ -32,9 +32,11 @@ click_window_point() {
   xdotool mousemove $((WINDOW_X + $1)) $((WINDOW_Y + $2)) click 1
 }
 
-# 0 始まり。ブランチはブランチ名の順に並ぶ。
+# 0 始まり。ブランチはブランチ名の順に並び、その上に WORKTREES の見出しとワークツリーの行、BRANCHES の見出しがある。
 click_branch_row() {
-  click_window_point $((SIDEBAR_WIDTH / 2)) $((ROW_HEIGHT * ($1 + 1) + ROW_HEIGHT / 2))
+  local worktree_count
+  worktree_count=$(git -C "$REPOSITORY" worktree list --porcelain | grep -c '^worktree ')
+  click_window_point $((SIDEBAR_WIDTH / 2)) $((ROW_HEIGHT * (worktree_count + 1 + $1 + 1) + ROW_HEIGHT / 2))
 }
 
 # 0 始まり。並び順は git status --porcelain と同じで、追跡していないファイルは最後に来る。

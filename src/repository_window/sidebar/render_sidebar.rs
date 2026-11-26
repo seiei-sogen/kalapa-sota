@@ -1,6 +1,7 @@
 use gpui::{Context, Div, Stateful, div, prelude::*, px, rgb};
 
 use super::render_local_branch_section::render_local_branch_section;
+use super::render_worktree_section::render_worktree_section;
 use crate::appearance::dark_theme_colors::{PANEL_BACKGROUND, PANEL_BORDER};
 use crate::appearance::repository_window_sizes::SIDEBAR_WIDTH;
 use crate::repository_window::RepositoryWindow;
@@ -20,5 +21,6 @@ pub fn render_sidebar(
         .bg(rgb(PANEL_BACKGROUND))
         .border_r_1()
         .border_color(rgb(PANEL_BORDER))
+        .child(render_worktree_section(repository_window))
         .child(render_local_branch_section(repository_window, cx))
 }

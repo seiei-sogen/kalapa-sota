@@ -1,0 +1,72 @@
+{
+  "number": 16,
+  "title": "ワークツリーの一覧を左の列に表示する",
+  "base_commit": "293db96eaab66539193e7ce05987e327108832c1",
+  "summary": "左の列の一番上に WORKTREES の節を足し、リポジトリのワークツリーを 1 行ずつ出す。開いているワークツリーに ● を付ける。その下に今の BRANCHES を置く。起動時に渡されたパスをワークツリーのルートに解決し、ウィンドウのタイトルと「開いているワークツリー」の判定に使う。行のクリックは #17 で足す。",
+  "depends_on": [],
+  "status": "next",
+  "reason": "依存がなく、issue の本文が、データの形、編集するファイル、コミットの順、検証まで決めている。1 つの PR に収まる。",
+  "current_behavior": "左の列は BRANCHES だけである (src/repository_window/render_local_branch_panel.rs)。RepositorySnapshot は commits、local_branches、changed_files だけを持つ (src/repository/repository_snapshot.rs)。タイトルは渡された引数そのままで、引数がなければ `kalapa - .` になる (src/main.rs の format!(\"kalapa - {}\", repository_path.display()))。git 2.43.0 で、メインと detached とブランチのワークツリーを作って `git worktree list --porcelain -z | tr '\\0' '\\n'` を実行すると、`worktree <パス>` `HEAD <ID>` `branch refs/heads/main` 空行、`worktree …/det` `HEAD <ID>` `detached` 空行、`worktree …/review` `HEAD <ID>` `branch refs/heads/review` 空行、の順に出た。`git -C main/sub rev-parse --show-toplevel` はルートのパスを返した。`git -C main/.git rev-parse --is-inside-work-tree --absolute-git-dir` は `false` と `.git` の絶対パスを返し、`--show-toplevel` は `fatal: this operation must be run in a work tree` (終了コード 128) で失敗した。 性能の基準: main を `GIT_TRACE=<絶対パス>` 付きで Xvfb に起動し、`leave_and_return_to_window` の前後で `trace: built-in: git` の行を数えると、4 から 12 に増えた。増えた 8 行は、`log`、`for-each-ref`、`rev-parse --is-inside-work-tree`、`status` の 4 行が 0.5 秒あけて 2 回である。Xvfb では、ウィンドウから離れるときと戻るときの 2 回、読み直しが走る。読み直し 1 回あたりは 4 で、issue の基準と合う。",
+  "how_it_works_now": "main.rs の main が引数のパスで git_cli::read_repository_snapshot を呼び、失敗すれば git のメッセージを標準エラーに出して終了コード 1 で終わる。成功すれば RepositoryWindow::new (create_repository_window.rs) にパスとスナップショットを渡す。RepositoryWindow は repository_path を持ち、reread_repository_snapshot と run_git_operation_and_reload がそれを git_cli の関数へ渡す。read_repository_snapshot は read_commit_history (git log)、read_local_branches (git for-each-ref)、read_changed_files (git rev-parse --is-inside-work-tree と git status) を順に呼ぶ。描画は render_repository_window.rs の Render が、左に render_local_branch_panel、右に履歴と render_commit_panel を並べる。render_local_branch_panel は、列の枠 (幅 BRANCH_PANEL_WIDTH、境界線、スクロール) と BRANCHES の見出しと行を 1 つの関数で作る。push_current_branch_in_background.rs はフィールド repository_path を読む。検証スキルの kalapa_driver.sh は repository_window_sizes.rs の定数 BRANCH_PANEL_WIDTH を名前で読み、click_branch_row の y を ROW_HEIGHT * (行 + 1) で決める。scripts/verify_on_xvfb.sh はブランチの行の y を Y + 26 + 26 + 13 と直に書く。launch_kalapa.sh は state.env の REPOSITORY に realpath した引数を書き、doctor_kalapa.sh がタイトルを `kalapa - $REPOSITORY` と比べる。",
+  "why_it_is_this_way": [
+    {
+      "claim": "ウィンドウは、ワークツリーを 1 つ開く。今のコードがすべての git 操作を 1 つのパスに対して実行するので、そのパスを切り替えれば既存の操作がそのままワークツリーに対応する。",
+      "source": "docs/20261125/plan.adoc「決めたこと」(PR #13、コミット 293db96)",
+      "kind": "quoted"
+    },
+    {
+      "claim": "bare リポジトリと .git の中を変更なしとして開けるのは、履歴とブランチを見せたいからである。起動時のパスを show-toplevel だけで決める案は、bare で失敗するので捨てた。",
+      "source": "src/git_cli/changed_files/read_changed_files.rs のコメント、docs/20261125/plan.adoc「決めたこと」",
+      "kind": "quoted"
+    },
+    {
+      "claim": "ワークツリーの追加、削除、ロック、prune は作らない。依頼が「基本的に読むだけ」だからである。",
+      "source": "docs/20261125/plan.adoc「何を変えるか」",
+      "kind": "quoted"
+    },
+    {
+      "claim": "タイトルの先頭 `kalapa - ` は、launch_kalapa.sh と scripts/verify_on_xvfb.sh がウィンドウを探すのに使っている。",
+      "source": "issue #16「作る変更」2、launch_kalapa.sh の xdotool search --name \"^kalapa - \"",
+      "kind": "quoted"
+    },
+    {
+      "claim": "計画は、WT-1 のマージ前に人が PR の live のスクリーンショットを見ることを求めている。",
+      "source": "docs/20261125/plan.adoc「PR の順番と依存」の表",
+      "kind": "quoted"
+    }
+  ],
+  "unanswered_by_the_record": [
+    "今回のファクトリーの実行が、計画の「マージ前に人の確認が要る」を外すのかどうか。調整役に尋ねた。",
+    "git 2.36 より前で `git worktree list -z` が使えないこと。計画も検索で読んだだけとしている。"
+  ],
+  "related_code": [
+    "src/main.rs: main",
+    "src/git_cli/read_repository_snapshot.rs: read_repository_snapshot",
+    "src/git_cli/changed_files/read_changed_files.rs: read_changed_files",
+    "src/repository/repository_snapshot.rs: RepositorySnapshot",
+    "src/repository_window/repository_window_state.rs: RepositoryWindow",
+    "src/repository_window/create_repository_window.rs: RepositoryWindow::new",
+    "src/repository_window/reread_repository_snapshot.rs: reread_repository_snapshot",
+    "src/repository_window/run_git_operation_and_reload.rs: run_git_operation_and_reload",
+    "src/repository_window/render_local_branch_panel.rs: render_local_branch_panel",
+    "src/repository_window/render_repository_window.rs: Render for RepositoryWindow",
+    "src/repository_window/commit_panel/commit_and_push_row/push_current_branch_in_background.rs: push_current_branch_in_background",
+    "src/appearance/repository_window_sizes.rs: BRANCH_PANEL_WIDTH",
+    ".claude/skills/verify-kalapa/scripts/kalapa_driver.sh: click_branch_row",
+    ".claude/skills/verify-kalapa/scripts/launch_kalapa.sh",
+    "scripts/verify_on_xvfb.sh"
+  ],
+  "related_tests": [
+    "src/git_cli/git_cli_round_trip_tests.rs",
+    "src/git_cli/changed_files/changed_files_round_trip_tests.rs",
+    "src/git_cli/fixture_repository/create_fixture_repository.rs"
+  ],
+  "affected_ci_checks": [
+    "調べた時点の main に CI の設定はない。#14 が macOS の cargo test を足す予定で、着地すればこの PR の cargo test も走る。"
+  ],
+  "risks": [
+    "macOS では一時ディレクトリが /var の下にあり、git は /private/var で始まるパスを返す。テストでパスを正規化せずに比べると macOS でだけ落ちる。",
+    "ブランチの行が下へずれるので、検証スクリプトの座標を同じコミットで直さないと、クリックが外れる。",
+    "ほかの作業役が README.md と docs/requirements.adoc の別の節を触る。同じ行は触らない。"
+  ]
+}

@@ -1,0 +1,145 @@
+= issue #16 ワークツリーの一覧を左の列に表示する: 計画
+
+事前調査は link:preliminary-investigation.json[] にある。issue の本文が、データの形とコミットの順を決めている。この計画は、それをいまのコードに当てはめ、本文が決めていない細部を決める。
+
+== 目的
+
+左の列の一番上に *WORKTREES* を足し、ワークツリーを 1 行ずつ出す。開いているワークツリーに ● を付ける。その下に *BRANCHES* を置く。
+
+終わりの条件は、次のとおり。
+
+* `cargo test` が通る。
+* Xvfb で `fixture-repo` を開くと、WORKTREES の 3 行と 1 行目の ● が写る。`click_branch_row 0` で `feature-a` に切り替わる。
+* `fixture-repo-worktree-review/sub` を渡して起動すると、● が `fixture-repo-worktree-review` の行と、BRANCHES の `worktree-review` に付き、タイトルが `kalapa - <そのルートのパス>` になり、`doctor_kalapa.sh` が 0 で終わる。
+* 既存のレシピ `view-history.md`、`switch-branch.md`、`push-current-branch.md` と、`scripts/verify_on_xvfb.sh` が通る。
+* 読み直し 1 回の git のプロセスが 5 である。
+
+== 現状
+
+* 左の列は BRANCHES だけである。`render_local_branch_panel` が、列の枠と見出しと行を 1 つの関数で作る。
+* `RepositoryWindow` は `repository_path: PathBuf` を持ち、起動時の引数をそのまま入れる。タイトルも引数そのままである。
+* `read_repository_snapshot` は `log`、`for-each-ref`、`rev-parse --is-inside-work-tree`、`status` の 4 回、git を呼ぶ。
+* 性能の基準。`main` を `GIT_TRACE=<絶対パス>` 付きで起動し、`leave_and_return_to_window` の前後で `trace: built-in: git` の行を数えると、8 行増えた。Xvfb では、離れるときと戻るときの 2 回、読み直しが走るからである。読み直し 1 回あたりは 4 である。
+* git 2.43.0 で、`git worktree list --porcelain -z` の形、`rev-parse --show-toplevel` と `--absolute-git-dir` の動きを確かめた。出力は事前調査にある。
+* リスク。macOS の一時ディレクトリのパスは、正規化しないと git の返すパスと合わない。ブランチの行が下へずれるので、検証スクリプトの座標を同じコミットで直す。
+
+== 変更
+
+コミットは、issue の「作る変更」の 1 から 8 の順に分ける。
+
+=== 1. 改名だけ
+
+* `src/repository_window/render_local_branch_panel.rs` を `src/repository_window/sidebar/render_local_branch_section.rs` へ移す。関数は `render_local_branch_section` にする。BRANCHES の見出しと行だけを返す。
+* `src/repository_window/sidebar/render_sidebar.rs` (新規): `render_sidebar`。列の枠 (幅、境界線、背景、スクロール) を作り、中に節を並べる。要素の id は `sidebar` にする。
+* `src/repository_window/sidebar/mod.rs` (新規)。`src/repository_window/mod.rs` と `render_repository_window.rs` の呼び出しを直す。
+* `src/appearance/repository_window_sizes.rs`: `BRANCH_PANEL_WIDTH` を `SIDEBAR_WIDTH` にする。
+* `.claude/skills/verify-kalapa/scripts/kalapa_driver.sh`: 定数を `SIDEBAR_WIDTH` で読む。シェルの変数名も `SIDEBAR_WIDTH` にする。
+* `scripts/verify_on_xvfb.sh` の `branch_panel_width` は、このスクリプトの中だけの変数で、Rust の定数を読まない。`sidebar_width` に改名する。
+
+=== 2. `repository_path` を `opened_worktree_root_path` に置き換える
+
+* `src/repository/worktrees/worktree_root_path.rs` (新規): `pub struct WorktreeRootPath(pub PathBuf)`。`Clone, Debug, PartialEq, Eq` を付ける。`mod.rs` もここで作る。
+* `src/git_cli/worktrees/resolve_worktree_root_path.rs` (新規): `resolve_worktree_root_path(path: &Path) -> Result<WorktreeRootPath, GitCommandError>`。`rev-parse --is-inside-work-tree` が `true` なら `rev-parse --show-toplevel`、そうでなければ `rev-parse --absolute-git-dir` の結果を返す。git の出力は、末尾の改行 1 つだけを落とす。
+* `src/git_cli/worktrees/worktrees_round_trip_tests.rs` (新規): このコミットでは、サブディレクトリと bare の 2 つの場合だけを書く。
+* `src/repository_window/repository_window_title.rs` (新規): `repository_window_title(&WorktreeRootPath) -> String`。
+* `src/git_cli/mod.rs` と `src/repository/mod.rs`: 新しいモジュールと公開する名前を足す。
+* `src/main.rs`: 引数を `resolve_worktree_root_path` に通す。失敗したら、git のメッセージを標準エラーに出して終了コード 1 で終わる。タイトルは `repository_window_title` で作る。
+* `repository_window_state.rs`、`create_repository_window.rs`、`reread_repository_snapshot.rs`、`run_git_operation_and_reload.rs`、`push_current_branch_in_background.rs`: フィールドを `opened_worktree_root_path: WorktreeRootPath` にする。git_cli へは `&self.opened_worktree_root_path.0` を渡す。
+* `render_changed_file_row.rs`、`commit_staged_changes_with_typed_message.rs`、`render_local_branch_section.rs`: クロージャの引数 `repository_path` を `worktree_root_path` にする。
+* `launch_kalapa.sh`: `state.env` の `REPOSITORY` に、`git -C <引数> rev-parse --show-toplevel` の結果を書く。失敗すれば `--absolute-git-dir` の結果を書く。
+
+=== 3. `parse_worktree_list_porcelain`
+
+* `src/repository/worktrees/worktree_checkout.rs`、`worktree.rs` (新規): issue の「データの形」のとおり。`Clone, Debug, PartialEq, Eq` を付ける。
+* `src/git_cli/worktrees/parse_worktree_list_porcelain.rs` (新規): 入力を `\0\0` でレコードに分け、レコードを `\0` で属性に分ける。先頭の属性が `worktree <パス>` でなければ `GitCommandError`。`branch refs/heads/<名前>` は `Branch`、`detached` は `HEAD <ID>` と合わせて `DetachedHead`、`bare` は `Bare` にする。どれもなければ `GitCommandError`。`detached` があって `HEAD` がないレコードも `GitCommandError`。`locked`、`prunable`、知らない属性は読み飛ばす。
+* `parse_worktree_list_porcelain_tests.rs` (新規)。
+
+=== 4. `read_worktrees`
+
+* `src/git_cli/worktrees/read_worktrees.rs` (新規): `git worktree list --porcelain -z` を呼び、パースする。
+* `RepositorySnapshot` に `worktrees: Vec<Worktree>` を足し、`read_repository_snapshot` から呼ぶ。
+* `worktrees_round_trip_tests.rs` に、残りの場合を足す。
+
+=== 5. `render_worktree_section`
+
+* `src/repository_window/sidebar/worktree_checkout_label.rs` (新規): `worktree_checkout_label(&WorktreeCheckout) -> String`。ブランチ名、`detached <ID の先頭 7 文字>`、`bare` を返す。issue のファイルの一覧にはないが、表示の決まりを画面なしでテストするために分ける。`push_button_label.rs` と同じ分け方である。テストは `worktree_checkout_label_tests.rs`。
+* `src/repository_window/sidebar/render_worktree_section.rs` (新規): 見出し `WORKTREES` と行。行は、印 (幅 12px、開いていれば ●)、ディレクトリ名、チェックアウトの表示 (`SECONDARY_TEXT`) を並べる。ディレクトリ名は、ルートのパスの最後の要素である。最後の要素がなければ、パス全体を出す。開いている行は `CURRENT_BRANCH_BACKGROUND` と太字にする。クリックもホバーも付けない。
+* `render_sidebar` で、WORKTREES を BRANCHES の上に置く。
+* `scripts/verify_on_xvfb.sh`: ブランチの行の y に 2 行分を足す。
+* `kalapa_driver.sh`: `click_branch_row` の y に、(ワークツリーの数 + 1) 行分を足す。数は `git -C "$REPOSITORY" worktree list --porcelain` の `worktree ` で始まる行で数える。
+
+=== 6. 検証スキルの fixture
+
+* `create_fixture_repository.sh`: `git worktree add --detach "$run_dir/fixture-repo-detached" main` と `git worktree add -b worktree-review "$run_dir/fixture-repo-worktree-review" main` を、作業ツリーを汚す前に足す。`fixture-repo-worktree-review/sub/only-in-worktree-review.txt` を置く。先頭で `"$run_dir"/fixture-repo-*` も消す。
+* `cleanup_kalapa.sh`: `"$run_dir"/fixture-repo-*` も消す。
+
+=== 7. `click_worktree_row` と文書
+
+* `kalapa_driver.sh`: `click_worktree_row`。y は `ROW_HEIGHT * (行 + 1) + ROW_HEIGHT / 2`。
+* `SKILL.md` の表に `click_worktree_row` を足す。
+* `features/README.md`: fixture の説明に、ブランチの行 4 の `worktree-review` (上流なし) と、ワークツリーの 3 行を足す。索引に `view-worktrees.md` を足す。
+* `features/view-worktrees.md` (新規): issue の live の 1 つ目と 2 つ目の手順を、「Feature entry contract」の 4 つの節で書く。
+
+=== 8. README と要件
+
+* `README.md`: 「できること」に WORKTREES を足す。「まだありません」の文を、ワークツリーの追加と削除、ワークツリーを開くこと、差分の表示、fetch と pull がまだないことに直す。「必要なもの」の git の行を「git 2.36 以上。push の **Publish** と `cargo test` には 2.37 以上が要ります。」にする。
+* `docs/requirements.adoc`: 「ワークツリー一覧の表示」にチェックを入れる。
+* `docs/images/repository-window.png`: 検証スキルの新しい fixture を開いた画面を `capture_screenshot` で撮り直す。
+
+== テスト
+
+最初に書く、失敗するテストは、コミット 2 の `worktrees_round_trip_tests` の 2 つである。
+
+* fixture のサブディレクトリを渡した `resolve_worktree_root_path` が、fixture のルートを `canonicalize` したパスを返す。
+* bare リポジトリを渡した `resolve_worktree_root_path` が、そのリポジトリを `canonicalize` したパスを返す。
+
+続けて、次の順に書く。
+
+* `parse_worktree_list_porcelain_tests`: ブランチ、detached、bare、`prunable` 付き、`locked` 付き、空白と改行を含むパス、壊れた出力 (`worktree` で始まらないレコード、チェックアウトの属性がないレコード)。
+* `worktrees_round_trip_tests`: `git worktree add` のあと `read_worktrees` が 2 つを返し、チェックアウトが合う。リンクされたワークツリーのサブディレクトリの `resolve_worktree_root_path` が、`read_worktrees` の返すパスと等しい。bare リポジトリの `resolve_worktree_root_path` が、bare の行のパスと等しい。ディレクトリを消したワークツリーが一覧に残る。リンクされたワークツリーを 1 つ持つ bare リポジトリの `read_repository_snapshot` は、`worktrees` の先頭が `Bare` で、`changed_files` が空である。
+* `worktree_checkout_label_tests`: 3 つの場合。
+
+fixture は `create_fixture_repository` で作る。この関数は、一時ディレクトリの下の `kalapa-<テスト名>-<PID>` をリポジトリにする。リンクされたワークツリーと bare リポジトリは、リポジトリの外の `kalapa-<テスト名>-<用途>-<PID>` に作り、テストの始めと終わりに消す。
+
+== 確認
+
+* CI は、調べた時点の `main` にない。#14 が着地していれば、macOS の `cargo test` が走る。
+* 手元で `cargo test` と `cargo build` (警告なし) を通す。コミット 3 だけは、`parse_worktree_list_porcelain` をテストしか呼ばないので、`cargo build` が dead code の警告を出す。コミット 4 で消える。`#[allow]` は付けない。
+* `target/debug/kalapa <ない場所>` が、git のメッセージを標準エラーに出して終了コード 1 で終わることを見る。
+* bare でないリポジトリの `.git` を渡して起動し、履歴が出て、● がどの WORKTREES の行にも付かないことを見る。
+* Xvfb の live と perf は、issue の「検証」のとおりに行う。perf は、`leave_and_return_to_window` の前後で増える行が 10 (読み直し 2 回 × 5) であることを見る。11 以上なら不合格とする。
+* 作り直す生成物は `docs/images/repository-window.png` である。
+
+== 範囲外
+
+* ワークツリーの行のクリック (#17)。
+* pull (#18)。
+* ワークツリーの追加、削除、ロック、prune。
+* ほかのワークツリーが使っているブランチの印。
+* `scripts/verify_on_xvfb.sh` が確かめる範囲を広げること。
+
+== セルフレビュー
+
+=== 1回目
+
+issue の「作る変更」の 8 項目と「検証」の各行を、計画の節と突き合わせた。
+
+* 見つけたこと: README の git の行は、いま「2.23 以上。Publish と `cargo test` には 2.37 以上」である。計画は「2.36 以上にする」としか書かず、2.37 の但し書きを残すのかが分からなかった。直したこと: 行の文面を書いた。
+* 見つけたこと: スクリーンショットをどの画面で撮るかがなかった。直したこと: 検証スキルの新しい fixture で撮ると書いた。
+* 見つけたこと: 7 の文書の変更が 1 行にまとまり、`features/README.md` に足す中身 (ブランチの行 4、ワークツリーの 3 行、索引) が挙がっていなかった。直したこと: ファイルごとに分けて書いた。
+
+=== 2回目
+
+計画を頭から読み直し、変更が届くべき呼び出し元と検査を見た。
+
+* 見つけたこと: コミット 3 は、パーサーをテストしか呼ばないので、`cargo build` が警告を出す。「警告なし」の確認と食い違う。直したこと: コミット 3 だけの例外として書いた。
+* 見つけたこと: issue は、起動の失敗が終了コード 1 とメッセージのままであることを求める (MAC-2 の workflow が確かめる)。計画に確認がなかった。直したこと: 確認に足した。
+* 見つけたこと: issue は、`.git` の中では ● がどの行にも付かないとしている。確認がなかった。直したこと: 確認に足した。
+* 見つけたこと: `git_cli/mod.rs` と `repository/mod.rs` が、コミット 2 の変更に挙がっていなかった。直したこと: 足した。
+
+=== 3回目
+
+計画を頭から読み直し、リポジトリの約束 (命名、1 ファイル 1 関数、テストの置き方) を見た。
+
+* 見つけたこと: テストの fixture の置き場所の文が、読んでも場所が決まらなかった。`create_fixture_repository` は一時ディレクトリの下の 1 つのディレクトリをリポジトリにするので、リンクされたワークツリーはその外に要る。直したこと: ディレクトリの名前の形を書いた。
+* 命名とファイルの分け方には、直すところがなかった。`worktree_checkout_label` は 1 ファイル 1 関数で、`push_button_label` と同じ形である。

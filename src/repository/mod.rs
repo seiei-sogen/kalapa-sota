@@ -2,6 +2,7 @@ mod changed_files;
 mod commit;
 mod local_branches;
 mod repository_snapshot;
+mod worktrees;
 
 pub use changed_files::{
     ChangedFile, ChangedFileStaging, CommitInclusion, FileChangeKind, RepositoryRootRelativePath,
@@ -10,3 +11,4 @@ pub use changed_files::{
 pub use commit::{Commit, CommitId};
 pub use local_branches::{LocalBranch, UpstreamTracking};
 pub use repository_snapshot::RepositorySnapshot;
+pub use worktrees::WorktreeRootPath;

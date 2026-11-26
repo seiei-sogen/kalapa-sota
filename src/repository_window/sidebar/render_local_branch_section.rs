@@ -43,8 +43,8 @@ pub fn render_local_branch_section(
                         .font_weight(FontWeight::BOLD)
                 })
                 .on_click(cx.listener(move |repository_window, _, _, cx| {
-                    repository_window.run_git_operation_and_reload(|repository_path| {
-                        switch_local_branch(repository_path, &branch_name)
+                    repository_window.run_git_operation_and_reload(|worktree_root_path| {
+                        switch_local_branch(worktree_root_path, &branch_name)
                     });
                     cx.notify();
                 }))

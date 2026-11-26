@@ -10,11 +10,11 @@ impl RepositoryWindow {
         }
         self.push_in_progress = true;
         cx.notify();
-        let repository_path = self.repository_path.clone();
+        let opened_worktree_root_path = self.opened_worktree_root_path.clone();
         cx.spawn(async move |repository_window, cx| {
             let push_result = cx
                 .background_executor()
-                .spawn(async move { push_current_branch(&repository_path) })
+                .spawn(async move { push_current_branch(&opened_worktree_root_path.0) })
                 .await;
             repository_window.update(cx, |repository_window, cx| {
                 repository_window.push_in_progress = false;

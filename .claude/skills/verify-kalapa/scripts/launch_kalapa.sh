@@ -7,6 +7,8 @@ set -euo pipefail
 run_dir=$(realpath -m "${1:?run-dir を指定する}")
 display_number="${2:?ディスプレイ番号を指定する (例: 91)}"
 repository=$(realpath "${3:?開くリポジトリを指定する}")
+# doctor_kalapa.sh がタイトルと比べるので、kalapa の resolve_worktree_root_path と同じ決め方でルートを求める。
+opened_worktree_root=$(git -C "$repository" rev-parse --show-toplevel 2>/dev/null || git -C "$repository" rev-parse --absolute-git-dir)
 repo_root=$(cd "$(dirname "$0")/../../../.." && pwd)
 evidence_dir="$run_dir/evidence"
 mkdir -p "$evidence_dir"
@@ -32,7 +34,7 @@ cat >"$run_dir/state.env" <<EOF
 RUN_DIR='$run_dir'
 EVIDENCE_DIR='$evidence_dir'
 REPO_ROOT='$repo_root'
-REPOSITORY='$repository'
+REPOSITORY='$opened_worktree_root'
 DISPLAY='$DISPLAY'
 XVFB_PID=$xvfb_pid
 EOF

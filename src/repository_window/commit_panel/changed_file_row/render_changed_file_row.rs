@@ -28,8 +28,8 @@ pub fn render_changed_file_row(
         .cursor_pointer()
         .hover(|row| row.bg(rgb(HOVERED_ROW_BACKGROUND)))
         .on_click(cx.listener(move |repository_window, _, _, cx| {
-            repository_window.run_git_operation_and_reload(|repository_path| {
-                toggle_changed_file_in_commit(repository_path, &clicked_file)
+            repository_window.run_git_operation_and_reload(|worktree_root_path| {
+                toggle_changed_file_in_commit(worktree_root_path, &clicked_file)
             });
             cx.notify();
         }))

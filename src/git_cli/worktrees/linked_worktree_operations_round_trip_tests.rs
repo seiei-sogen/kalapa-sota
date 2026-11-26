@@ -1,7 +1,8 @@
 use std::path::{Path, PathBuf};
 
-use super::worktrees_round_trip_tests::path_outside_fixture;
-use crate::git_cli::fixture_repository::{create_fixture_repository, run_git_in_fixture};
+use crate::git_cli::fixture_repository::{
+    create_fixture_repository, path_outside_fixture, run_git_in_fixture,
+};
 use crate::git_cli::run_git_command::run_git_command;
 use crate::git_cli::{read_repository_snapshot, switch_local_branch};
 

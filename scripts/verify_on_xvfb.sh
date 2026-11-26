@@ -117,7 +117,7 @@ button_width=96
 button_gap=8
 bottom_row_y=$((Y + HEIGHT - bottom_row_padding_y - input_height / 2))
 push_button_x=$((X + WIDTH - panel_padding_x - button_width / 2))
-commit_button_x=$((push_button_x - button_width - button_gap))
+commit_button_x=$((push_button_x - 2 * (button_width + button_gap)))
 input_text_signature() {
   import -window "$window" -crop "200x$((input_height - 2))+$((sidebar_width + panel_padding_x + 2))+$((HEIGHT - bottom_row_padding_y - input_height + 1))" -format "%#" info:
 }

@@ -62,10 +62,10 @@ click_push_button() {
   click_window_point $((WINDOW_WIDTH - COMMIT_ROW_PADDING_X - COMMIT_PANEL_BUTTON_MIN_WIDTH / 2)) "$(commit_row_center_y)"
 }
 
-# Push ボタンのラベルが最小幅に収まるときだけ正しい。Push ↑12 ↓3 のように長いと、Commit は左へずれる。
+# Pull と Push のボタンのラベルが最小幅に収まるときだけ正しい。Push ↑12 ↓3 のように長いと、Commit は左へずれる。
 click_commit_button() {
   click_window_point \
-    $((WINDOW_WIDTH - COMMIT_ROW_PADDING_X - COMMIT_PANEL_BUTTON_MIN_WIDTH - COMMIT_ROW_GAP - COMMIT_PANEL_BUTTON_MIN_WIDTH / 2)) \
+    $((WINDOW_WIDTH - COMMIT_ROW_PADDING_X - 2 * (COMMIT_PANEL_BUTTON_MIN_WIDTH + COMMIT_ROW_GAP) - COMMIT_PANEL_BUTTON_MIN_WIDTH / 2)) \
     "$(commit_row_center_y)"
 }
 

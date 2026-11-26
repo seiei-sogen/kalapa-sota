@@ -36,6 +36,22 @@ pub fn render_commit_pull_push_row(
         )
         .child(
             render_commit_panel_button(
+                "pull-button",
+                if remote_operation_in_progress == Some(RemoteOperation::Pull) {
+                    "Pulling…"
+                } else {
+                    "Pull"
+                },
+            )
+            .when(remote_operation_in_progress.is_some(), |pull_button| {
+                pull_button.opacity(0.6).cursor_default()
+            })
+            .on_click(cx.listener(|repository_window, _, _, cx| {
+                repository_window.run_remote_operation_in_background(RemoteOperation::Pull, cx)
+            })),
+        )
+        .child(
+            render_commit_panel_button(
                 "push-button",
                 push_button_label(
                     remote_operation_in_progress == Some(RemoteOperation::Push),

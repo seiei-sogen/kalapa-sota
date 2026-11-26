@@ -1,0 +1,79 @@
+= issue #14: macOS で cargo test を回す CI を足す
+
+== 目的
+
+PR ごとに、macOS でコンパイルが通り、テストが通ることを確かめられるようにする。
+
+終わりの条件は次のとおりである。
+
+* PR のチェック欄に macOS のテストのジョブが出て、緑になる。
+* ジョブのログに、macOS のランナーの名前と、`test result: ok. 26 passed` が出ている。
+* ジョブの所要時間が 20 分以内である。
+
+== 現状
+
+* CI がない。`ls .github` は `No such file or directory` である。
+* Linux (rustc 1.97.0、git 2.43.0) では、`cargo test --locked` が `test result: ok. 26 passed; 0 failed; 0 ignored` を出す。
+* macOS では、ビルドもテストも確かめた記録がない。
+* git を使うテストは、`create_fixture_repository` が git の設定をリポジトリに書くので、ランナーの git 設定に頼らない。
+
+リスクは次の 3 つである。
+
+* Metal のツールチェーンがなくて、gpui のビルドが落ちる。
+* workflow のファイルの push が、権限で断られる。
+* macOS でだけ落ちるテストがある。
+
+== 変更
+
+* `.github/workflows/test_on_macos.yml` を新しく作る。
+** `pull_request` と、`main` への `push` で動く。
+** ジョブ `run_cargo_test_on_macos` は、`macos-latest` で動く。
+** ランナーの名前とアーキテクチャ、`sw_vers`、`xcodebuild -version`、`git --version`、`rustc --version` を出すステップを置く。
+** `cargo test --locked` を実行する。
+** 権限は `contents: read` だけにする。`timeout-minutes` は 30 にする。
+* Rust は、ランナーに入っているものを使う。README が求めるのは 1.89 以上で、バージョンはログに出る。足りなければ、そのとき入れるステップを足す。
+* CI がビルドを Metal のツールチェーンで落としたら、`xcodebuild -downloadComponent MetalToolchain` のステップを足す。それでも落ちたら、`Cargo.toml` で gpui の `runtime_shaders` を有効にする。
+* macOS でだけ落ちるテストがあれば、原因を直す。テストは飛ばさない。
+* push が断られたら、止めて、利用者に push を頼む。
+
+=== 計画と違うこと
+
+コードレビューの指摘で、次の 2 つを足した。
+
+* `actions/checkout` を、Node 24 で動く `v6` にした。
+* `concurrency` を足した。同じ PR に続けて push したとき、古いコミットの実行を止めて、macOS のランナーの時間を使わないようにする。`main` での実行は止めない。
+
+== テスト
+
+workflow は設定であり、手元で失敗させられるテストがない。失敗するテストに当たるのは、PR のチェック欄である。この PR を立てる前は、macOS のジョブがない。立てたあとに、ジョブが出て、緑になる。
+
+手元では、YAML として読めることだけを確かめる。
+
+== 確認
+
+* 新しい検査「macOS で cargo test を実行する」ができる。ほかに CI の検査はない。
+* 手元で行えるのは、Linux での `cargo test --locked` (26 件) と、YAML の構文の確認である。macOS での実行は、CI に任せる。
+* 作り直す生成物はない。
+
+== 範囲外
+
+* Linux の CI。計画 (`docs/20261125/plan.adoc`) が範囲外としている。
+* `~/.cargo` と `target` のキャッシュ。20 分を超えたときだけ足す。
+* README の「まだ動作を確かめていません」の書き換え。ウィンドウが動くことは、MAC-2 (#15) で確かめる。
+* リリース用の workflow。MAC-2 (#15) で作る。
+
+== セルフレビュー
+
+=== 1回目
+
+* issue は、ランナーのアーキテクチャを出すことを求めている。`uname -a` だけでは名前が出ないので、`RUNNER_NAME`、`RUNNER_OS`、`RUNNER_ARCH` も出すことにした。live の検証が「ランナーの名前」を求めているからである。
+* perf の基準 (20 分) が終わりの条件になかったので、足した。
+
+=== 2回目
+
+* `timeout-minutes` を 20 にすると、20 分を超えた実行の時間が読めずに打ち切られる。30 にして、20 分を超えたかどうかをログで読めるようにした。理由を workflow のコメントに書く。
+* README の扱いが決まっていなかったので、範囲外に書いた。
+
+=== 3回目
+
+* 頭から読み直した。issue の「作る変更」の 5 項目と、「検証」の 3 項目のすべてに、変更か確認が対応している。新しく見つけたことはない。

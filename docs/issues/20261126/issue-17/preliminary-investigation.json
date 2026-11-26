@@ -1,0 +1,56 @@
+{
+  "number": 17,
+  "title": "ワークツリーをクリックして、ウィンドウで開く",
+  "base_commit": "482b593c992170ee82873e5a107c8be723f6c8d4",
+  "summary": "WORKTREES の行をクリックすると、ウィンドウがそのワークツリーを開く。● が移り、コミット履歴、BRANCHES、CHANGES、タイトルがそのワークツリーのものになる。読めないワークツリーの行をクリックしたときは、元のワークツリーを開いたまま、エラーを赤い帯に出す。",
+  "depends_on": [16],
+  "status": "next",
+  "reason": "依存する #16 は PR #24 でマージ済みである (main は 482b593)。issue の本文が、足す関数、編集するファイル、検証を決めている。1 つの PR に収まる。",
+  "current_behavior": "main (482b593) では、WORKTREES の行にクリックのハンドラがない。src/repository_window/sidebar/render_worktree_section.rs の行は on_click も hover も cursor_pointer も持たず、関数は cx を受け取らない。検証スキルの view-worktrees.md の Gotchas と SKILL.md の click_worktree_row の説明も「クリックは何もしない」と書いている。#16 の作業で、fixture を開いて click_worktree_row 1 を押しても git の状態が変わらず、panic もしないことを確かめた (PR #24 の作業役の報告)。",
+  "how_it_works_now": "RepositoryWindow (repository_window_state.rs) は opened_worktree_root_path、snapshot、commit_graph、last_git_error を持つ。reread_repository_snapshot は opened_worktree_root_path で read_repository_snapshot を呼び、snapshot と commit_graph を入れ替える。run_git_operation_and_reload は git の操作のあと読み直し、last_git_error を入れ替える。render_sidebar が render_worktree_section(repository_window) と render_local_branch_section(repository_window, cx) を並べる。開いている行の判定は worktree.root_path == opened_worktree_root_path である。ウィンドウのタイトルは main.rs が起動時に repository_window_title で 1 度だけ決める。push は push_current_branch_in_background が始めたときのパスを写して走らせ、終わったときに run_git_operation_and_reload で、そのとき開いているワークツリーを読み直す。コミットメッセージの入力欄は別の Entity で、読み直しでは消えない。",
+  "why_it_is_this_way": [
+    {
+      "claim": "#16 は、行をクリックしても何も起きないようにわざと作った。クリックは #17 で足すと決めていた。",
+      "source": "issue #16「作る変更」5 (「この PR では、行をクリックしても何も起きない」)、PR #24",
+      "kind": "quoted"
+    },
+    {
+      "claim": "ウィンドウはワークツリーを 1 つ開く。開いているパスを切り替えれば、既存のブランチ切り替え、ステージ、コミット、push がそのワークツリーに対して働く。",
+      "source": "docs/20261125/plan.adoc「決めたこと」",
+      "kind": "quoted"
+    },
+    {
+      "claim": "ほかのワークツリーが使っているブランチをクリックしたときは、git のエラーをそのまま赤い帯に出す。印を付ける案は捨てた。",
+      "source": "docs/20261125/plan.adoc「決めたこと」",
+      "kind": "quoted"
+    },
+    {
+      "claim": "PR #24 のコードレビューで WorktreeCheckout::UnreadableHead が足された。その行をクリックしたときの動きは #17 で決めることになっている。",
+      "source": "docs/issues/20261126/issue-16/fix-plan.adoc「計画と違うこと」、PR #24 の本文",
+      "kind": "quoted"
+    }
+  ],
+  "unanswered_by_the_record": [
+    "UnreadableHead の行をクリックしたときに何を出すか。記録は決めていない。計画では、ほかの行と同じく読んでみて、失敗すれば git のエラーを赤い帯に出す。"
+  ],
+  "related_code": [
+    "src/repository_window/sidebar/render_worktree_section.rs: render_worktree_section",
+    "src/repository_window/sidebar/render_sidebar.rs: render_sidebar",
+    "src/repository_window/repository_window_state.rs: RepositoryWindow",
+    "src/repository_window/reread_repository_snapshot.rs: reread_repository_snapshot",
+    "src/repository_window/repository_window_title.rs: repository_window_title",
+    "src/git_cli/read_repository_snapshot.rs: read_repository_snapshot",
+    "src/git_cli/local_branches/switch_local_branch.rs: switch_local_branch",
+    ".claude/skills/verify-kalapa/scripts/kalapa_driver.sh: click_worktree_row, click_branch_row"
+  ],
+  "related_tests": [
+    "src/git_cli/worktrees/worktrees_round_trip_tests.rs"
+  ],
+  "affected_ci_checks": [
+    "macOS で cargo test を実行する (.github/workflows/test_on_macos.yml)"
+  ],
+  "risks": [
+    "kalapa_driver.sh の git_in_repository、record_git_state、click_branch_row のワークツリーの数は、起動時のパス ($REPOSITORY) に対して働く。ワークツリーを切り替えたあとも数は同じなので click_branch_row は合うが、git の状態は git -C <パス> で読む必要がある。",
+    "このセッションでは PR のマージが権限の分類器に断られる。条件がそろったら、調整役に PR の番号と head の SHA を報告する。"
+  ]
+}

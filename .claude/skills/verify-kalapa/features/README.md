@@ -55,4 +55,5 @@ Each feature file starts with an H1 title and one paragraph describing the user-
 - [Switch branch](./switch-branch.md) covers switching from the branch panel and git refusing a switch.
 - [Stage changed files](./stage-changed-files.md) covers the CHANGES list, the three checkbox states, and re-reading on return to the window.
 - [Commit staged changes](./commit-staged-changes.md) covers the message input, Japanese text, Commit, and the error banner.
+- [Pull the current branch](./pull-current-branch.md) covers fast-forward pulls, `Pulling…` with Pull and Push dimmed, git refusing a diverged branch, and pulling in a linked worktree.
 - [Push the current branch](./push-current-branch.md) covers Publish, `Push ↑N ↓M`, `Pushing…`, and push failures.

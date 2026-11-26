@@ -16,7 +16,7 @@ ROW_HEIGHT=$(read_window_size_constant ROW_HEIGHT)
 SIDEBAR_WIDTH=$(read_window_size_constant SIDEBAR_WIDTH)
 COMMIT_PANEL_HEIGHT=$(read_window_size_constant COMMIT_PANEL_HEIGHT)
 COMMIT_PANEL_BUTTON_MIN_WIDTH=$(read_window_size_constant COMMIT_PANEL_BUTTON_MIN_WIDTH)
-# render_commit_and_push_row.rs の px_3, py_2, gap_2 と、入力欄の高さ。
+# render_commit_pull_push_row.rs の px_3, py_2, gap_2 と、入力欄の高さ。
 COMMIT_ROW_PADDING_X=12
 COMMIT_ROW_PADDING_Y=8
 COMMIT_ROW_GAP=8
@@ -62,10 +62,17 @@ click_push_button() {
   click_window_point $((WINDOW_WIDTH - COMMIT_ROW_PADDING_X - COMMIT_PANEL_BUTTON_MIN_WIDTH / 2)) "$(commit_row_center_y)"
 }
 
-# Push ボタンのラベルが最小幅に収まるときだけ正しい。Push ↑12 ↓3 のように長いと、Commit は左へずれる。
-click_commit_button() {
+# Push のボタンのラベルが最小幅に収まるときだけ正しい。Push ↑12 ↓3 のように長いと、Pull は左へずれる。
+click_pull_button() {
   click_window_point \
     $((WINDOW_WIDTH - COMMIT_ROW_PADDING_X - COMMIT_PANEL_BUTTON_MIN_WIDTH - COMMIT_ROW_GAP - COMMIT_PANEL_BUTTON_MIN_WIDTH / 2)) \
+    "$(commit_row_center_y)"
+}
+
+# Pull と Push のボタンのラベルが最小幅に収まるときだけ正しい。Push ↑12 ↓3 のように長いと、Commit は左へずれる。
+click_commit_button() {
+  click_window_point \
+    $((WINDOW_WIDTH - COMMIT_ROW_PADDING_X - 2 * (COMMIT_PANEL_BUTTON_MIN_WIDTH + COMMIT_ROW_GAP) - COMMIT_PANEL_BUTTON_MIN_WIDTH / 2)) \
     "$(commit_row_center_y)"
 }
 

@@ -1,6 +1,6 @@
 ---
 name: verify-kalapa
-description: Drive the real kalapa desktop window (the Rust + GPUI git GUI in this repo) on Xvfb with xdotool clicks and key presses, and prove behavior with screenshots plus git state. Use when verifying any change to what a kalapa user sees or does, such as the history graph, branch switching, staging changed files, committing, or pushing.
+description: Drive the real kalapa desktop window (the Rust + GPUI git GUI in this repo) on Xvfb with xdotool clicks and key presses, and prove behavior with screenshots plus git state. Use when verifying any change to what a kalapa user sees or does, such as the history graph, branch switching, staging changed files, committing, pulling, or pushing.
 ---
 
 # Verify kalapa
@@ -57,6 +57,7 @@ This defines the following functions in the current shell.
 | `type_text <text>` | Type into the focused input. Japanese works. |
 | `press_keys <keys...>` | Press xdotool keys, for example `ctrl+a BackSpace`. |
 | `click_commit_button` | Click **Commit**. |
+| `click_pull_button` | Click **Pull** (also labeled `Pulling…`). |
 | `click_push_button` | Click **Push** (also labeled `Publish` or `Pushing…`). |
 | `leave_and_return_to_window` | Focus away and back. kalapa re-reads the repository on return. |
 | `wait_until '<shell condition>'` | Poll up to 30 s. |

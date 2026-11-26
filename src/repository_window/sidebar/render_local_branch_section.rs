@@ -6,7 +6,7 @@ use crate::appearance::dark_theme_colors::{
 };
 use crate::appearance::repository_window_sizes::ROW_HEIGHT;
 use crate::git_cli::switch_local_branch;
-use crate::repository_window::RepositoryWindow;
+use crate::repository_window::{RemoteOperation, RepositoryWindow};
 
 pub fn render_local_branch_section(
     repository_window: &RepositoryWindow,
@@ -43,6 +43,12 @@ pub fn render_local_branch_section(
                         .font_weight(FontWeight::BOLD)
                 })
                 .on_click(cx.listener(move |repository_window, _, _, cx| {
+                    // pull の途中で切り替えると、git pull が切り替えた先のブランチを進めてしまう。
+                    if repository_window.remote_operation_in_progress
+                        == Some(RemoteOperation::Pull)
+                    {
+                        return;
+                    }
                     repository_window.run_git_operation_and_reload(|worktree_root_path| {
                         switch_local_branch(worktree_root_path, &branch_name)
                     });

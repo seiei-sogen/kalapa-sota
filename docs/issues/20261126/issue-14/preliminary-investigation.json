@@ -1,0 +1,49 @@
+{
+  "number": 14,
+  "title": "macOS で cargo test を回す CI を足す",
+  "base_commit": "293db96eaab66539193e7ce05987e327108832c1",
+  "summary": "pull_request と main への push で動き、macos-latest で cargo test --locked を実行する workflow を 1 つ足す。ランナーのアーキテクチャ、Xcode、git、rustc のバージョンを毎回ログに出す。macOS でだけ落ちるものがあれば、原因を直す。PR のチェック欄で macOS のジョブが緑になり、Linux と同じ 26 件が通ることが終わりの条件である。",
+  "depends_on": [],
+  "status": "done",
+  "reason": "依存はなく、workflow のファイル 1 つで収まる。所有者の判断は要らない。直し方の順番 (Metal のツールチェーンのダウンロード、次に runtime_shaders) は issue が決めている。",
+  "current_behavior": "CI がない。`ls .github` は `No such file or directory`。Linux (Ubuntu 24.04、rustc 1.97.0、git 2.43.0) で `cargo test --locked` を実行すると `test result: ok. 26 passed; 0 failed; 0 ignored` が出る。macOS でのビルドとテストは、手元に macOS がないので確かめていない。",
+  "how_it_works_now": "`cargo test --locked` は、バイナリ crate kalapa (Cargo.toml) のテストを 1 つの実行ファイルで回す。git を使うテストは、src/git_cli/fixture_repository/create_fixture_repository.rs の create_fixture_repository が std::env::temp_dir() の下にリポジトリを作り、user.name、user.email、commit.gpgsign をリポジトリの設定に書くので、ランナーの git 設定に頼らない。gpui 0.2.2 は依存としてビルドされ、macOS ではその build.rs が Metal のシェーダをコンパイルする (issue の前提。手元では確かめていない)。",
+  "why_it_is_this_way": [
+    {
+      "claim": "このリポジトリには CI がない。kalapa を macOS でビルドした記録もない。",
+      "source": "docs/20261125/plan.adoc (293db96、PR #13) の MAC-1",
+      "kind": "quoted"
+    },
+    {
+      "claim": "macOS も対象ですが、まだ動作を確かめていません。",
+      "source": "README.md (112ad94、PR #12)",
+      "kind": "quoted"
+    },
+    {
+      "claim": "Linux の CI は、この計画では作らない。",
+      "source": "docs/20261125/plan.adoc (293db96、PR #13) の「次のものは、この計画では作らない」",
+      "kind": "quoted"
+    },
+    {
+      "claim": "create_fixture_repository が git の設定をリポジトリに書くのは、利用者の git 設定がない CI でもテストの git commit が通るようにするためである。",
+      "source": "src/git_cli/fixture_repository/create_fixture_repository.rs のコメント",
+      "kind": "quoted"
+    }
+  ],
+  "unanswered_by_the_record": [
+    "GitHub の macOS ランナーに Metal のツールチェーンが入っているか。",
+    "エージェントの GitHub の権限で .github/workflows/ の下のファイルを push できるか。",
+    "macOS でだけ落ちるテストがあるか。"
+  ],
+  "related_code": [
+    "Cargo.toml: gpui 0.2.2 への依存",
+    "src/git_cli/fixture_repository/create_fixture_repository.rs: create_fixture_repository"
+  ],
+  "related_tests": ["src/**/*_tests.rs (cargo test で 26 件)"],
+  "affected_ci_checks": ["macOS で cargo test を実行する (この PR で新しくできる)"],
+  "risks": [
+    "Metal のツールチェーンがなくてビルドが落ちる。issue の順番で直す。",
+    "workflow のファイルの push が権限で断られる。断られたら止めて、利用者に push を頼む。",
+    "macOS の temp_dir は /var から /private/var へのシンボリックリンクの下にあるので、パスを比べるテストが落ちるかもしれない。"
+  ]
+}

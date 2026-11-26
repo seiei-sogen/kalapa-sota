@@ -1,0 +1,62 @@
+{
+  "number": 18,
+  "title": "現在のブランチを fast-forward だけで pull する",
+  "base_commit": "65e971929bf306a41c4f4188c6b6c442a3e0dccb",
+  "summary": "Commit と Push の間に Pull のボタンを足す。押すと、開いているワークツリーで `git pull --no-rebase --ff-only` をバックグラウンドで走らせる。fast-forward できないときは、git の理由を赤い帯に出し、作業ツリーを変えない。push と pull は、同時には 1 つしか走らない。",
+  "depends_on": [
+    16
+  ],
+  "status": "done",
+  "reason": "PR を立てた。",
+  "current_behavior": "main (65e9719) には Pull のボタンがない。コミットの行は、入力欄、Commit、Push の順である (src/repository_window/commit_panel/commit_and_push_row/render_commit_and_push_row.rs)。README は「fetch と pull は、まだありません」と書いている。git 2.43.0 で、bare リモートと 2 つの clone を作って確かめた。リモートに新しいコミットがあるとき、`git -c advice.diverging=false pull --no-rebase --ff-only --quiet` は終了コード 0 で、HEAD がリモートのコミットになった。ローカルとリモートに別々のコミットを作り、`pull.rebase=true` を設定して同じコマンドを打つと、`fatal: Not possible to fast-forward, aborting.` の 1 行だけを出して終了コード 128 で終わり、`.git` に rebase のディレクトリはできなかった。上流のないブランチでは `There is no tracking information for the current branch.` で、detached HEAD では `You are not currently on a branch.` で失敗した。",
+  "how_it_works_now": "RepositoryWindow (repository_window_state.rs) は push_in_progress: bool を持つ。render_commit_and_push_row が Push のボタンを作り、push_button_label(push_in_progress, 上流との差) で表示を決め、途中なら薄くする。クリックは push_current_branch_in_background を呼ぶ。この関数は、途中なら何もせずに戻り、そうでなければ push_in_progress を true にし、開いているワークツリーのパスを写して、background_executor で git_cli::push_current_branch を走らせる。終わったら push_in_progress を false にし、run_git_operation_and_reload(|_| push_result) で読み直して、結果を last_git_error に入れる。git_cli::push_current_branch は run_git_command で `git -c push.default=upstream -c push.autoSetupRemote=true push --quiet` を打つ。run_git_command は GIT_TERMINAL_PROMPT=0 と setsid で、端末への問い合わせを失敗させる。検証スクリプトでは、kalapa_driver.sh の click_commit_button が、右端から Push の幅と隙間を引いた位置を押す。scripts/verify_on_xvfb.sh は commit_button_x を push_button_x から計算する。",
+  "why_it_is_this_way": [
+    {
+      "claim": "pull は `git pull --no-rebase --ff-only` にする。fast-forward だけなら、マージコミットも衝突も rebase の途中状態も作らない。kalapa には衝突を解消する画面がない。利用者の pull.rebase や pull.ff に従う案は捨てた。",
+      "source": "docs/20261125/plan.adoc「決めたこと」",
+      "kind": "quoted"
+    },
+    {
+      "claim": "push をバックグラウンドで走らせ、途中の 2 回目のクリックを無視するのは、PR #10 で入った。",
+      "source": "コミット 0909fc2「現在のブランチを push し、上流との差をボタンに出す」、PR #10",
+      "kind": "quoted"
+    },
+    {
+      "claim": "bool を 2 つ持つと、push と pull が同時に走っている状態を書けてしまう。Option<RemoteOperation> なら、走っているのは 1 つだけである。",
+      "source": "issue #18「データの形」",
+      "kind": "quoted"
+    },
+    {
+      "claim": "Pull には、取り込んでいないコミットの数を出さない。kalapa は fetch をしないので、その数は利用者が端末で fetch したあとにしか変わらない。同じ数は Push の ↓M に出ている。fetch だけのボタンは範囲外である。",
+      "source": "issue #18「作る変更」、docs/20261125/plan.adoc「範囲外」",
+      "kind": "quoted"
+    }
+  ],
+  "unanswered_by_the_record": [
+    "push の途中でワークツリーを切り替えたときに、結果をどのワークツリーの画面に出すか。#17 は「変えないこと」とし、issue #26 に書いた。pull も同じ動きになる。"
+  ],
+  "related_code": [
+    "src/repository_window/repository_window_state.rs: RepositoryWindow.push_in_progress",
+    "src/repository_window/create_repository_window.rs: RepositoryWindow::new",
+    "src/repository_window/commit_panel/commit_and_push_row/render_commit_and_push_row.rs: render_commit_and_push_row",
+    "src/repository_window/commit_panel/commit_and_push_row/push_current_branch_in_background.rs: push_current_branch_in_background",
+    "src/repository_window/commit_panel/commit_and_push_row/push_button_label.rs: push_button_label",
+    "src/repository_window/commit_panel/render_commit_panel.rs: render_commit_panel",
+    "src/git_cli/local_branches/push_current_branch.rs: push_current_branch",
+    ".claude/skills/verify-kalapa/scripts/kalapa_driver.sh: click_commit_button, click_push_button",
+    "scripts/verify_on_xvfb.sh: commit_button_x"
+  ],
+  "related_tests": [
+    "src/git_cli/local_branches/push_current_branch_round_trip_tests.rs",
+    "src/repository_window/commit_panel/commit_and_push_row/push_button_label_tests.rs",
+    "src/git_cli/worktrees/linked_worktree_operations_round_trip_tests.rs"
+  ],
+  "affected_ci_checks": [
+    "macOS で cargo test を実行する (.github/workflows/test_on_macos.yml)"
+  ],
+  "risks": [
+    "Commit のボタンが左へずれるので、検証スクリプトの座標を同じコミットで直さないと、クリックが外れる。",
+    "この環境では `git init --bare` がリモートの HEAD を master にする。別の clone は `git clone -b main` で作る。",
+    "このセッションでは PR のマージが権限の分類器に断られる。条件がそろったら、調整役に PR の番号と head の SHA を報告する。"
+  ]
+}

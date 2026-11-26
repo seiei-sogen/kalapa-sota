@@ -64,8 +64,8 @@ sleep 1
 import -window root "$work_dir/history-before-checkout.png"
 
 eval "$(xdotool getwindowgeometry --shell "$window")"
-# BRANCHES 見出しの次から 26px ごとに feature-a, feature-b, hotfix, main と並ぶ。
-xdotool mousemove $((X + 60)) $((Y + 26 + 26 + 13)) click 1
+# WORKTREES の見出しとワークツリー 1 行、BRANCHES の見出しの次から、26px ごとに feature-a, feature-b, hotfix, main と並ぶ。
+xdotool mousemove $((X + 60)) $((Y + 26 * 3 + 26 + 13)) click 1
 wait_until '[ "$(git -C "$fixture" branch --show-current)" = feature-b ]'
 sleep 1
 import -window root "$work_dir/history-after-checkout.png"
@@ -78,7 +78,7 @@ file_status() { git -C "$fixture" status --porcelain=v1 -- "$1"; }
 [ "$(git -C "$fixture" status --porcelain=v1)" = "$(printf 'MM CHANGELOG.md\n M README.md\n?? memo.txt')" ]
 commit_panel_height=240
 row_height=26
-branch_panel_width=220
+sidebar_width=220
 changed_file_row_y() { echo $((HEIGHT - commit_panel_height + row_height * ($1 + 1) + row_height / 2)); }
 xdotool mousemove $((X + 320)) $((Y + $(changed_file_row_y 1))) click 1
 wait_until '[ "$(file_status README.md)" = "M  README.md" ]'
@@ -94,7 +94,7 @@ echo "status after clicking README.md once and CHANGELOG.md twice:"
 git -C "$fixture" status --porcelain=v1
 
 count_colors_in_fourth_changed_file_row() {
-  import -window "$window" -crop "$((WIDTH - branch_panel_width))x${row_height}+${branch_panel_width}+$(($(changed_file_row_y 3) - row_height / 2))" -format "%k" info:
+  import -window "$window" -crop "$((WIDTH - sidebar_width))x${row_height}+${sidebar_width}+$(($(changed_file_row_y 3) - row_height / 2))" -format "%k" info:
 }
 echo "idea" > "$fixture/new-idea.txt"
 sleep 1
@@ -117,9 +117,9 @@ button_width=96
 button_gap=8
 bottom_row_y=$((Y + HEIGHT - bottom_row_padding_y - input_height / 2))
 push_button_x=$((X + WIDTH - panel_padding_x - button_width / 2))
-commit_button_x=$((push_button_x - button_width - button_gap))
+commit_button_x=$((push_button_x - 2 * (button_width + button_gap)))
 input_text_signature() {
-  import -window "$window" -crop "200x$((input_height - 2))+$((branch_panel_width + panel_padding_x + 2))+$((HEIGHT - bottom_row_padding_y - input_height + 1))" -format "%#" info:
+  import -window "$window" -crop "200x$((input_height - 2))+$((sidebar_width + panel_padding_x + 2))+$((HEIGHT - bottom_row_padding_y - input_height + 1))" -format "%#" info:
 }
 push_button_signature() {
   import -window "$window" -crop "${button_width}x${input_height}+$((WIDTH - panel_padding_x - button_width))+$((HEIGHT - bottom_row_padding_y - input_height))" -format "%#" info:
@@ -144,7 +144,7 @@ echo "files in HEAD: $(git -C "$fixture" show --name-only --format= HEAD | tr '\
 [ "$(git -C "$fixture" show --name-only --format= HEAD)" = README.md ]
 [ "$(input_text_signature)" = "$empty_input_signature" ] || { echo "input is not empty after commit" >&2; exit 1; }
 
-git_error_banner_pixel() { import -window "$window" -crop "1x1+$((branch_panel_width + 4))+4" -depth 8 -format "%[hex:p{0,0}]" info:; }
+git_error_banner_pixel() { import -window "$window" -crop "1x1+$((sidebar_width + 4))+4" -depth 8 -format "%[hex:p{0,0}]" info:; }
 head_before_failing_commit=$(git -C "$fixture" rev-parse HEAD)
 xdotool mousemove $((X + 320)) $bottom_row_y click 1
 xdotool type --delay 80 "nothing staged"

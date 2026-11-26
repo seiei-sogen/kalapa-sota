@@ -11,23 +11,28 @@ use gpui::{
     App, Application, Bounds, TitlebarOptions, WindowBounds, WindowOptions, prelude::*, px, size,
 };
 
-use git_cli::read_repository_snapshot;
-use repository_window::RepositoryWindow;
+use git_cli::{read_repository_snapshot, resolve_worktree_root_path};
+use repository_window::{RepositoryWindow, repository_window_title};
 use single_line_text_input::bind_single_line_text_input_keys;
 
 fn main() {
-    let repository_path = std::env::args_os()
+    let launch_argument_path = std::env::args_os()
         .nth(1)
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from("."));
-    let window_title = format!("kalapa - {}", repository_path.display());
-    let snapshot = match read_repository_snapshot(&repository_path) {
-        Ok(snapshot) => snapshot,
+    let opened_worktree =
+        resolve_worktree_root_path(&launch_argument_path).and_then(|opened_worktree_root_path| {
+            let snapshot = read_repository_snapshot(&opened_worktree_root_path.0)?;
+            Ok((opened_worktree_root_path, snapshot))
+        });
+    let (opened_worktree_root_path, snapshot) = match opened_worktree {
+        Ok(opened_worktree) => opened_worktree,
         Err(error) => {
             eprintln!("{}", error.message);
             std::process::exit(1);
         }
     };
+    let window_title = repository_window_title(&opened_worktree_root_path);
 
     Application::new().run(move |cx: &mut App| {
         bind_single_line_text_input_keys(cx);
@@ -41,7 +46,9 @@ fn main() {
                 }),
                 ..Default::default()
             },
-            |window, cx| cx.new(|cx| RepositoryWindow::new(repository_path, snapshot, window, cx)),
+            |window, cx| {
+                cx.new(|cx| RepositoryWindow::new(opened_worktree_root_path, snapshot, window, cx))
+            },
         )
         .expect("open the repository window");
         cx.on_window_closed(|cx| cx.quit()).detach();

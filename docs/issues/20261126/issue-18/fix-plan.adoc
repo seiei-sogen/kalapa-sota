@@ -1,0 +1,137 @@
+= issue #18 現在のブランチを fast-forward だけで pull する: 計画
+
+事前調査は link:preliminary-investigation.json[] にある。issue の本文が、データの形とコミットの順を決めている。
+
+== 目的
+
+*Commit* と *Push* の間に *Pull* のボタンを足す。押すと、開いているワークツリーの現在のブランチを、fast-forward だけで pull する。
+
+終わりの条件は、次のとおり。
+
+* *Pull* を押すと、上流ブランチのコミットが履歴の上に出る。
+* fast-forward できないときは、赤い帯に `fatal: Not possible to fast-forward, aborting.` が出て、HEAD は動かない。
+* pull の途中は、ボタンが `Pulling…` と出て、*Pull* と *Push* の両方が薄くなり、押しても何もしない。その間も、ほかの操作はできる。
+* `cargo test`、issue の live の 6 つ、perf が通る。
+
+== 現状
+
+* コミットの行は、入力欄、*Commit*、*Push* の順である。`RepositoryWindow` は `push_in_progress: bool` を持つ。
+* `push_current_branch_in_background` は、途中なら戻り、そうでなければ git をバックグラウンドで走らせ、終わったら読み直して結果を赤い帯に入れる。
+* git 2.43.0 で、pull のコマンドの 4 つの場合 (fast-forward、枝分かれ、上流なし、detached) を確かめた。出力は事前調査にある。
+* 読み直し 1 回の git のプロセスは 5 である (#16 で測った)。
+* リスク。*Commit* のボタンが左へずれる。この環境の bare リモートは HEAD が `master` なので、別の clone は `git clone -b main` で作る。
+
+== 変更
+
+コミットは、issue の「作る変更」の 1 から 5 の順に分ける。
+
+=== 1. `push_in_progress` を `remote_operation_in_progress` に置き換える
+
+画面の動きは変えない。
+
+* `src/repository_window/remote_operation.rs` (新規): `pub enum RemoteOperation { Push }`。`Clone, Copy, Debug, PartialEq, Eq` を付ける。`src/repository_window/mod.rs` に足し、`RemoteOperation` を公開する。
+* `repository_window_state.rs`: `pub remote_operation_in_progress: Option<RemoteOperation>`。`create_repository_window.rs` は `None` で始める。
+* ディレクトリ `commit_and_push_row/` を `commit_pull_push_row/` に、`render_commit_and_push_row.rs` を `render_commit_pull_push_row.rs` に (関数も `render_commit_pull_push_row`)、`push_current_branch_in_background.rs` を `run_remote_operation_in_background.rs` に改名する。`git mv` を使う。
+* `run_remote_operation_in_background(&mut self, remote_operation: RemoteOperation, cx)`: `remote_operation_in_progress` が `Some` なら戻る。そうでなければ `Some(remote_operation)` にし、`match remote_operation` で git_cli の関数を選んでバックグラウンドで走らせ、終わったら `None` に戻して、今までどおり `run_git_operation_and_reload(|_| 結果)` を呼ぶ。
+* `render_commit_pull_push_row`: `push_button_label` には `remote_operation_in_progress == Some(RemoteOperation::Push)` を渡す。薄くする条件は `remote_operation_in_progress.is_some()` にする。
+* `commit_panel/mod.rs`、`render_commit_panel.rs` の名前を直す。`kalapa_driver.sh` のコメントにあるファイル名も直す。
+* `push_button_label.rs` とそのテストは変えない。
+
+=== 2. `pull_current_branch_fast_forward_only`
+
+* `src/git_cli/local_branches/pull_current_branch_fast_forward_only.rs` (新規): `git -c advice.diverging=false pull --no-rebase --ff-only --quiet` を `run_git_command` で打つ。`--no-rebase` を付ける理由 (古い git が `pull.rebase=true` を `--ff-only` より優先しないように) を、1 行のコメントに書く。
+* `pull_current_branch_fast_forward_only_round_trip_tests.rs` (新規)。`local_branches/mod.rs` と `git_cli/mod.rs` に足す。
+
+=== 3. *Pull* のボタン
+
+* `RemoteOperation` に `Pull` を足す。`run_remote_operation_in_background` の `match` に `Pull => pull_current_branch_fast_forward_only` を足す。
+* `render_commit_pull_push_row`: *Commit* と *Push* の間に、id `pull-button` のボタンを足す。表示は、pull の途中なら `Pulling…`、そうでなければ `Pull` で、この関数の中で決める。表示のための関数は作らない。*Pull* と *Push* の両方を、`remote_operation_in_progress.is_some()` のとき薄くする。
+* `scripts/verify_on_xvfb.sh`: `commit_button_x` を、ボタン 1 つ分 (`button_width + button_gap`) だけ左へずらす。
+* `kalapa_driver.sh`: `click_commit_button` を、ボタン 1 つ分だけ左へずらす。コメントの「Push ボタンのラベルが最小幅に収まるときだけ正しい」は、*Pull* にも当てはまるように直す。
+
+=== 4. 検証スキル
+
+* `kalapa_driver.sh`: `click_pull_button`。位置は、今の `click_commit_button` の位置 (右端から *Push* の幅と隙間を引いたところ) である。
+* `SKILL.md` の表に足す。`features/pull-current-branch.md` (新規) に、issue の live の 1 つ目から 4 つ目を、「Feature entry contract」の 4 つの節で書く。別の clone は `git clone -q -b main` で作ると書く。`features/README.md` の索引に足す。
+* `SKILL.md` の description (「committing, or pushing」) に pull を足す。
+
+=== 5. README と要件
+
+* 「pull する」の節を「push する」の前後に足す。中身は issue の表 (`Pull`、`Pulling…`) と、fast-forward だけであること、fast-forward できないときの赤い帯である。
+* 「できること」に pull を足し、「fetch と pull は、まだありません」を、fetch だけのボタンと、マージや rebase を伴う pull がないことに直す。
+* 「push する」の「*Commit* の右のボタン」を、右端のボタンに直す。
+* `Push ↑N ↓M` の行に、枝分かれしていなければ *Pull* で取り込めることを足す。
+* 「制限」の「push だけはバックグラウンドで走ります」を、push と pull に直す。
+* `docs/requirements.adoc` の「pull」にチェックを入れる。
+* `docs/images/repository-window.png` を、新しい fixture の画面で撮り直す。ボタンが 1 つ増えるからである。issue の一覧にはない。
+
+== テスト
+
+最初に書く、失敗するテストは、コミット 2 の `pull_current_branch_fast_forward_only_round_trip_tests` である。場合は 4 つ。
+
+* リモートに新しいコミットがあれば、HEAD がリモートの先頭と等しくなる。
+* `pull.rebase=true` で枝分かれしていれば `Err` を返し、HEAD は動かず、`.git/rebase-merge` ができない。
+* 上流ブランチがなければ `Err` を返す。
+* リンクされたワークツリーで呼ぶと、そのワークツリーのブランチだけが進む。メインのワークツリーの HEAD は動かない。
+
+fixture は `create_fixture_repository` と `path_outside_fixture` で作る。リモートを進める別の clone は、`git clone -b main` で作る。1 ファイルが 200 行を超えるなら、fixture を作る関数を `src/git_cli/fixture_repository/` に 1 ファイル 1 関数で分ける。
+
+コミット 1 は改名と型の置き換えなので、新しいテストは書かない。既存の `cargo test` が通ることで確かめる。*Pull* の表示は関数に分けないので、単体テストを書かない。証拠は live である。
+
+== 確認
+
+* CI: macOS の `cargo test`。手元でも `cargo test` と、警告のない `cargo build` を通す。コミット 1 は `RemoteOperation::Push` だけ、コミット 2 は呼ばれない pull の関数があるので、途中のコミットで dead code の警告が出ることがある。最後のコミットでは出ない。
+* live: issue の 6 つ。3 つ目の、pull の途中に *Push* を押してもフックが 0 回のままであることは、`pre-push` フックの呼ばれた回数のファイルで見る。pull が終わったあとも、ファイルがないか 0 行であることを見る。
+* live の 6 つ目のうち、既存のレシピ `commit-staged-changes.md` と `push-current-branch.md` をそのまま通す。`push-current-branch.md` の「Behind」は、`main` でもこの環境では `git clone -b main` に替えないと通らない (#16 の PR に書いた)。同じ替え方で通す。
+* perf: `GIT_TRACE=<絶対パス>` 付きで起動し、`leave_and_return_to_window` の前後で増える行が 10 (読み直し 2 回 × 5) であることを見る。11 以上なら不合格とする。
+* 作り直す生成物は `docs/images/repository-window.png` である。
+
+== 範囲外
+
+* fetch だけのボタン。取り込んでいないコミットの数を *Pull* に出すこと。
+* マージや rebase を伴う pull と、衝突の解消。
+* push や pull の途中でワークツリーを切り替えたときの、結果の出し方 (#26 に書いた)。
+* `scripts/verify_on_xvfb.sh` が確かめる範囲を広げること。
+* #21、#22、#23、#25。
+
+== 計画と違うこと
+
+* コミット 1 の `run_remote_operation_in_background.rs` は、シグネチャの折り返しと `match` で行が増え、元のファイルとの似ている度合いが 44% になった。git の既定 (50%) では改名と見なされず、削除と追加に見える。rustfmt に合わない `update` の呼び出しの形は、元のまま残した。
+* `pull_current_branch_fast_forward_only` には、`--no-rebase` のほかに、`advice.diverging=false` の理由も 1 行のコメントに書いた。何のための設定か、コードからは分からないからである。
+* ラウンドトリップのテストは、`Err` に加えて、赤い帯に出る git の理由の一部 (`Not possible to fast-forward`、`no tracking information`) も確かめる。
+* `features/push-current-branch.md` の「The button right of **Commit**」を、右端のボタンに直した。issue の編集するファイルにはないが、*Pull* が間に入って正しくなくなるからである。
+* README には、計画の 5 か所のほかに、次を足した。取り込むコミットが未コミットの変更のあるファイルを触ると git が断ること。取り込んでいないコミットの数は *Push* の ↓ に出ること。「制限」の ssh の行で、失敗するのを push や pull にしたこと。
+* `features/pull-current-branch.md` のリンクされたワークツリーの手順は、`click_worktree_row 2` ではなく、`fixture-repo-worktree-review` を渡して新しく起動する。前の手順の `remote.origin.uploadpack` と `pre-push` フックは共有の `.git` にあり、ほかのワークツリーにも効くからである。
+* `scripts/verify_on_xvfb.sh` は、ディスプレイを `:99` から `:94` に、`app_root` をリポジトリの絶対パスに置き換えた写しで走らせた。この作業で使ってよいディスプレイが 92 から 98 だったからである。
+* perf は、最初の `leave_and_return_to_window` で 10 行、2 回目と 3 回目で 5 行ずつ増えた。読み直し 1 回は、どれも 5 である。
+* live のスクリーンショット 4 枚を link:live-evidence/[] に置いた。
+* コードレビューのあと、pull の途中は BRANCHES の行のクリックを無視するようにした。pull の fetch の途中でブランチを切り替えると、`git pull` が、切り替えた先のブランチを元のブランチの上流へ進めてしまうからである (git 2.43 で再現)。Xvfb で、`uploadpack` を 3 秒遅くして *Pull* を押し、その間に `click_branch_row 0` を押した。ブランチは `main` のままで、`main` だけが進み、`feature-a` は動かなかった。pull が終わったあとの `click_branch_row 0` では切り替わった。ステージとコミットは、issue の live のとおり、pull の途中も押せる。
+* コードレビューのあと、pull のコマンドに `-c merge.autoStash=false` を足した。利用者が `merge.autoStash=true` を設定していると、git がコミットしていない変更を退避して fast-forward し、戻すときに衝突の印を作業ツリーに残して、成功を返すからである。テストを 1 つ足した。
+* コードレビューのあと、`push-current-branch.md` の「Behind」の clone を `git clone -q -b feature-b` に直した。この手順の時点でチェックアウトしているブランチである。直したあとの文面では、Xvfb で実行していない。
+* README の「制限」に、pull がファイルを書き換えている間のステージやコミットが `index.lock` のエラーで断られることがある、と書いた。
+* コードレビューの指摘のうち、この PR で直さなかったもの。push や pull が戻らないとボタンが押せないままになること (#28)。途中でワークツリーを切り替えたときの結果の出し方 (#26)。テストが git の英語のメッセージを見ていること。git が翻訳されたメッセージを出す環境では落ちるが、CI と手元は英語なので、そのままにした。テストの補助関数が 1 ファイルに 3 つあること。ファイルは 200 行以内で、既存のテストも補助関数を同じファイルに置いているので、そのままにした。
+
+== セルフレビュー
+
+=== 1回目
+
+issue の「作る変更」の 5 項目、表、「検証」を、計画と突き合わせた。
+
+* 見つけたこと: ボタンが 1 つ増えるので、README の `docs/images/repository-window.png` が古くなる。issue の編集するファイルにはない。直したこと: 5 に足した。
+* 見つけたこと: `SKILL.md` の description が、できることを並べているのに pull がない。直したこと: 4 に足した。
+* 見つけたこと: live の 3 つ目の「フックの呼ばれた回数は 0 のまま」を、いつ見るかがなかった。pull の途中だけ見ると、pull のあとに遅れて push が走っても見逃す。直したこと: pull が終わったあとも見ると書いた。
+
+=== 2回目
+
+計画を頭から読み直し、変更が届くべき呼び出し元を見た。
+
+* 見つけたこと: `kalapa_driver.sh` のコメントが、改名する前のファイル名 `render_commit_and_push_row.rs` を挙げている。直したこと: 1 に足した。
+* 見つけたこと: この環境では、別の clone が `git clone -b main` でないと何もチェックアウトしない。issue の live はそう書いていない。直したこと: テスト、レシピ、確認に書いた。
+* 見つけたこと: 途中のコミットで dead code の警告が出る。直したこと: 確認に書いた。
+
+=== 3回目
+
+計画を頭から読み直し、リポジトリの約束と、前の回で直した箇所を見た。
+
+* 見つけたこと: テストの fixture (リモート、別の clone、枝分かれ) は長くなりやすく、1 ファイル 200 行を超えるかもしれない。直したこと: 超えるときの分け方を書いた。
+* 命名には、直すところがなかった。`run_remote_operation_in_background` と `pull_current_branch_fast_forward_only` は、issue の決めた名前で、動詞と目的語の形である。

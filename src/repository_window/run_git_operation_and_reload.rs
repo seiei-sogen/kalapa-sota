@@ -9,7 +9,7 @@ impl RepositoryWindow {
         &mut self,
         git_operation: impl FnOnce(&Path) -> Result<(), GitCommandError>,
     ) -> bool {
-        let operation_result = git_operation(&self.repository_path);
+        let operation_result = git_operation(&self.opened_worktree_root_path.0);
         // 失敗した操作でも、フックなどがファイルを書き換えていることがあるので、必ず読み直す。
         let reread_result = self.reread_repository_snapshot();
         let operation_succeeded = operation_result.is_ok();

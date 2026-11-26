@@ -10,7 +10,8 @@ This directory is the maintained source for verifying what a kalapa user sees an
 
 The fresh fixture looks like this.
 
-- Branches, in panel order: `feature-a` (0), `feature-b` (1), `hotfix` (2), `main` (3). `main` is current and tracks `origin/main` in sync. `feature-b` has no upstream.
+- Worktrees, in panel order: `fixture-repo` (0), `fixture-repo-detached` (1), `fixture-repo-worktree-review` (2). `fixture-repo` is the one `launch_kalapa.sh` opens, so its row has ●. `fixture-repo-detached` checks out the head of `main` detached. `fixture-repo-worktree-review` checks out `worktree-review` and has one untracked file, `sub/only-in-worktree-review.txt`.
+- Branches, in panel order: `feature-a` (0), `feature-b` (1), `hotfix` (2), `main` (3), `worktree-review` (4). `main` is current and tracks `origin/main` in sync. `feature-b` and `worktree-review` have no upstream. `worktree-review` points at the head of `main`.
 - The bare remote `$RUN_DIR/remote.git` has only `main`.
 - History has 7 commits. Dates and authors are fixed, so the screen is the same every run.
 - CHANGES rows, in order, are as follows.
@@ -48,8 +49,11 @@ Each feature file starts with an H1 title and one paragraph describing the user-
 
 ## Features
 
+- [View worktrees](./view-worktrees.md) covers the WORKTREES list, the ● on the opened worktree, and opening a linked worktree from a subdirectory.
+- [Open a worktree](./open-worktree.md) covers clicking a WORKTREES row, switching the opened worktree's branch, git refusing a branch another worktree uses, and clicking a worktree whose directory was deleted.
 - [View history](./view-history.md) covers the commit list, the branch graph, and the branch colors.
 - [Switch branch](./switch-branch.md) covers switching from the branch panel and git refusing a switch.
 - [Stage changed files](./stage-changed-files.md) covers the CHANGES list, the three checkbox states, and re-reading on return to the window.
 - [Commit staged changes](./commit-staged-changes.md) covers the message input, Japanese text, Commit, and the error banner.
+- [Pull the current branch](./pull-current-branch.md) covers fast-forward pulls, `Pulling…` with Pull and Push dimmed, git refusing a diverged branch, and pulling in a linked worktree.
 - [Push the current branch](./push-current-branch.md) covers Publish, `Push ↑N ↓M`, `Pushing…`, and push failures.

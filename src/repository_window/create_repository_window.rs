@@ -1,15 +1,13 @@
-use std::path::PathBuf;
-
 use gpui::{AppContext, Context, Window};
 
 use super::RepositoryWindow;
 use crate::commit_graph::layout_commit_graph;
-use crate::repository::RepositorySnapshot;
+use crate::repository::{RepositorySnapshot, WorktreeRootPath};
 use crate::single_line_text_input::SingleLineTextInput;
 
 impl RepositoryWindow {
     pub fn new(
-        repository_path: PathBuf,
+        opened_worktree_root_path: WorktreeRootPath,
         snapshot: RepositorySnapshot,
         window: &mut Window,
         cx: &mut Context<Self>,
@@ -25,11 +23,11 @@ impl RepositoryWindow {
         .detach();
         Self {
             commit_graph: layout_commit_graph(&snapshot.commits),
-            repository_path,
+            opened_worktree_root_path,
             snapshot,
             last_git_error: None,
             commit_message_input: cx.new(|cx| SingleLineTextInput::new("Commit message", cx)),
-            push_in_progress: false,
+            remote_operation_in_progress: None,
         }
     }
 }

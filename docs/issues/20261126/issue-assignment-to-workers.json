@@ -1,0 +1,102 @@
+{
+  "base_commit": "293db96eaab66539193e7ce05987e327108832c1",
+  "issues": [
+    {
+      "number": 14,
+      "title": "macOS で cargo test を回す CI を足す",
+      "summary": "pull_request と main への push で、macos-latest のランナーが cargo test --locked を回す workflow を 1 つ足す。Metal のツールチェーンでビルドが落ちたら、ツールチェーンを入れるか、gpui の runtime_shaders を有効にする。macOS でだけ落ちるテストは、原因を直す。",
+      "depends_on": [],
+      "related_code": [
+        ".github/workflows/test_on_macos.yml",
+        "Cargo.toml"
+      ],
+      "status": "queued",
+      "assigned_to_worker": 1,
+      "reason": "依存がなく、1 つの PR に収まる。確かめるのは CI のログだけで、Mac の実機が要らない。触るファイルが #16、#17、#18 と重ならないので、別の作業役にした。"
+    },
+    {
+      "number": 15,
+      "title": "タグから macOS 用バイナリをリリースし、インストール手順を書く",
+      "summary": "v で始まるタグの push で、arm64 の macOS 用の実行ファイルをビルドして GitHub Releases に載せる workflow を足す。README に、インストールの 1 行と、起動、更新、削除の方法を書く。",
+      "depends_on": [14],
+      "related_code": [
+        ".github/workflows/release_macos_binary.yml",
+        "README.md",
+        "docs/requirements.adoc"
+      ],
+      "status": "skipped",
+      "reason": "所有者の手が要る。issue は、マージの前に、タグ v0.1.0-rc.1 を打って、Apple Silicon の Mac の実機で 1 行のインストールと起動を確かめること (live 1) を求めている。作業役には Mac がなく、この実行にも Mac はつながっていない。"
+    },
+    {
+      "number": 16,
+      "title": "ワークツリーの一覧を左の列に表示する",
+      "summary": "git worktree list --porcelain -z を読み、左の列の一番上に WORKTREES を出す。開いているワークツリーに ● を付ける。repository_path を、起動時に決めたワークツリーのルートのパスに置き換える。検証スキルの fixture と、README、要件の文書も直す。",
+      "depends_on": [],
+      "related_code": [
+        "src/repository/worktrees/",
+        "src/git_cli/worktrees/",
+        "src/git_cli/read_repository_snapshot.rs",
+        "src/repository/repository_snapshot.rs",
+        "src/main.rs",
+        "src/repository_window/sidebar/",
+        "src/repository_window/repository_window_state.rs",
+        "src/repository_window/commit_panel/",
+        "src/appearance/repository_window_sizes.rs",
+        ".claude/skills/verify-kalapa/",
+        "scripts/verify_on_xvfb.sh",
+        "README.md",
+        "docs/requirements.adoc",
+        "docs/images/repository-window.png"
+      ],
+      "status": "queued",
+      "assigned_to_worker": 2,
+      "reason": "依存がなく、issue が 1 つの PR として、コミットの順まで決めている。#17 と #18 がこれに依存するので、同じ作業役の先頭にした。"
+    },
+    {
+      "number": 17,
+      "title": "ワークツリーをクリックして、ウィンドウで開く",
+      "summary": "WORKTREES の行をクリックすると、ウィンドウがそのワークツリーを開く。先に読んでから入れ替えるので、読めなければ元のワークツリーを開いたまま、エラーを赤い帯に出す。",
+      "depends_on": [16],
+      "related_code": [
+        "src/repository_window/open_worktree_in_window.rs",
+        "src/repository_window/mod.rs",
+        "src/repository_window/sidebar/render_worktree_section.rs",
+        "src/git_cli/worktrees/worktrees_round_trip_tests.rs",
+        ".claude/skills/verify-kalapa/",
+        "README.md",
+        "docs/requirements.adoc"
+      ],
+      "status": "queued",
+      "assigned_to_worker": 2,
+      "reason": "#16 に依存し、#16 が作るファイルを書くので、同じ作業役にした。1 つの PR に収まる。"
+    },
+    {
+      "number": 18,
+      "title": "現在のブランチを fast-forward だけで pull する",
+      "summary": "Commit と Push の間に Pull のボタンを足す。git pull --no-rebase --ff-only を、push と同じくバックグラウンドで走らせる。push_in_progress: bool を、Option<RemoteOperation> に置き換える。",
+      "depends_on": [16],
+      "related_code": [
+        "src/git_cli/local_branches/",
+        "src/repository_window/remote_operation.rs",
+        "src/repository_window/repository_window_state.rs",
+        "src/repository_window/commit_panel/",
+        ".claude/skills/verify-kalapa/",
+        "scripts/verify_on_xvfb.sh",
+        "README.md",
+        "docs/requirements.adoc"
+      ],
+      "status": "queued",
+      "assigned_to_worker": 2,
+      "reason": "#16 に依存し、#16 と #17 が書くファイル (repository_window_state.rs、commit_panel、検証スキル、README) を書くので、同じ作業役にした。#17 には依存しないが、番号の順で #17 の後にした。"
+    },
+    {
+      "number": 19,
+      "title": "ワークツリー対応を入れた版をリリースし、Mac で確かめる",
+      "summary": "main にタグ v0.2.0 を打ってリリースを作り、Mac の実機で、ワークツリーの一覧と切り替えと pull を確かめる。コードは変えない。",
+      "depends_on": [15, 17, 18],
+      "related_code": [],
+      "status": "skipped",
+      "reason": "PR ではなく、所有者が Mac の実機で行う作業である。skipped の #15 にも依存する。"
+    }
+  ]
+}

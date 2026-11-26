@@ -32,6 +32,11 @@ click_window_point() {
   xdotool mousemove $((WINDOW_X + $1)) $((WINDOW_Y + $2)) click 1
 }
 
+# 0 始まり。並び順は git worktree list と同じで、メインのワークツリーが先頭に来る。
+click_worktree_row() {
+  click_window_point $((SIDEBAR_WIDTH / 2)) $((ROW_HEIGHT * ($1 + 1) + ROW_HEIGHT / 2))
+}
+
 # 0 始まり。ブランチはブランチ名の順に並び、その上に WORKTREES の見出しとワークツリーの行、BRANCHES の見出しがある。
 click_branch_row() {
   local worktree_count

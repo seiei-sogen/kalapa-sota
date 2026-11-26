@@ -1,18 +1,17 @@
-use gpui::{Context, Div, FontWeight, SharedString, Stateful, div, prelude::*, px, rgb};
+use gpui::{Context, Div, FontWeight, SharedString, div, prelude::*, px, rgb};
 
-use super::RepositoryWindow;
 use crate::appearance::branch_lane_color;
 use crate::appearance::dark_theme_colors::{
-    CURRENT_BRANCH_BACKGROUND, HOVERED_ROW_BACKGROUND, PANEL_BACKGROUND, PANEL_BORDER,
-    SECONDARY_TEXT,
+    CURRENT_BRANCH_BACKGROUND, HOVERED_ROW_BACKGROUND, SECONDARY_TEXT,
 };
-use crate::appearance::repository_window_sizes::{BRANCH_PANEL_WIDTH, ROW_HEIGHT};
+use crate::appearance::repository_window_sizes::ROW_HEIGHT;
 use crate::git_cli::switch_local_branch;
+use crate::repository_window::RepositoryWindow;
 
-pub fn render_local_branch_panel(
+pub fn render_local_branch_section(
     repository_window: &RepositoryWindow,
     cx: &mut Context<RepositoryWindow>,
-) -> Stateful<Div> {
+) -> Div {
     let branch_rows = repository_window
         .snapshot
         .local_branches
@@ -64,16 +63,9 @@ pub fn render_local_branch_panel(
         });
 
     div()
-        .id("local-branch-panel")
-        .overflow_y_scroll()
         .flex()
         .flex_col()
         .flex_shrink_0()
-        .w(px(BRANCH_PANEL_WIDTH))
-        .h_full()
-        .bg(rgb(PANEL_BACKGROUND))
-        .border_r_1()
-        .border_color(rgb(PANEL_BORDER))
         .child(
             div()
                 .flex()

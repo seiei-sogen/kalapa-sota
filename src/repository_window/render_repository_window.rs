@@ -5,7 +5,7 @@ use gpui::{Context, Window, div, prelude::*, px, rgb, uniform_list};
 use super::RepositoryWindow;
 use super::commit_panel::render_commit_panel;
 use super::commit_row::render_commit_row;
-use super::render_local_branch_panel::render_local_branch_panel;
+use super::sidebar::render_sidebar;
 use crate::appearance::dark_theme_colors::{
     GIT_ERROR_BACKGROUND, GIT_ERROR_TEXT, PRIMARY_TEXT, WINDOW_BACKGROUND,
 };
@@ -48,7 +48,7 @@ impl Render for RepositoryWindow {
             .bg(rgb(WINDOW_BACKGROUND))
             .text_color(rgb(PRIMARY_TEXT))
             .text_sm()
-            .child(render_local_branch_panel(self, cx))
+            .child(render_sidebar(self, cx))
             .child(
                 div()
                     .flex()

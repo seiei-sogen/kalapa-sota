@@ -105,6 +105,11 @@ fixture は `create_fixture_repository` と `path_outside_fixture` で作る。�
 * `scripts/verify_on_xvfb.sh` は、ディスプレイを `:99` から `:94` に、`app_root` をリポジトリの絶対パスに置き換えた写しで走らせた。この作業で使ってよいディスプレイが 92 から 98 だったからである。
 * perf は、最初の `leave_and_return_to_window` で 10 行、2 回目と 3 回目で 5 行ずつ増えた。読み直し 1 回は、どれも 5 である。
 * live のスクリーンショット 4 枚を link:live-evidence/[] に置いた。
+* コードレビューのあと、pull の途中は BRANCHES の行のクリックを無視するようにした。pull の fetch の途中でブランチを切り替えると、`git pull` が、切り替えた先のブランチを元のブランチの上流へ進めてしまうからである (git 2.43 で再現)。Xvfb で、`uploadpack` を 3 秒遅くして *Pull* を押し、その間に `click_branch_row 0` を押した。ブランチは `main` のままで、`main` だけが進み、`feature-a` は動かなかった。pull が終わったあとの `click_branch_row 0` では切り替わった。ステージとコミットは、issue の live のとおり、pull の途中も押せる。
+* コードレビューのあと、pull のコマンドに `-c merge.autoStash=false` を足した。利用者が `merge.autoStash=true` を設定していると、git がコミットしていない変更を退避して fast-forward し、戻すときに衝突の印を作業ツリーに残して、成功を返すからである。テストを 1 つ足した。
+* コードレビューのあと、`push-current-branch.md` の「Behind」の clone を `git clone -q -b feature-b` に直した。この手順の時点でチェックアウトしているブランチである。直したあとの文面では、Xvfb で実行していない。
+* README の「制限」に、pull がファイルを書き換えている間のステージやコミットが `index.lock` のエラーで断られることがある、と書いた。
+* コードレビューの指摘のうち、この PR で直さなかったもの。push や pull が戻らないとボタンが押せないままになること (#28)。途中でワークツリーを切り替えたときの結果の出し方 (#26)。テストが git の英語のメッセージを見ていること。git が翻訳されたメッセージを出す環境では落ちるが、CI と手元は英語なので、そのままにした。テストの補助関数が 1 ファイルに 3 つあること。ファイルは 200 行以内で、既存のテストも補助関数を同じファイルに置いているので、そのままにした。
 
 == セルフレビュー
 

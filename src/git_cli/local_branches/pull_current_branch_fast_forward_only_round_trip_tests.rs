@@ -97,6 +97,34 @@ fn pulling_a_diverged_branch_with_pull_rebase_set_fails_and_leaves_head_without_
 }
 
 #[test]
+fn pulling_over_an_uncommitted_change_with_merge_autostash_set_fails_and_leaves_the_file_as_it_was()
+{
+    let test_name = "pull-over-uncommitted-change";
+    let (fixture, bare_remote) = create_fixture_tracking_main_on_bare_remote(test_name);
+    let notes_path = fixture.join("notes.txt");
+    for notes_on_remote in ["base\n", "remote\n"] {
+        std::fs::write(&notes_path, notes_on_remote).unwrap();
+        run_git_in_fixture(&fixture, &["add", "notes.txt"]);
+        run_git_in_fixture(&fixture, &["commit", "-q", "-m", notes_on_remote.trim()]);
+    }
+    run_git_in_fixture(&fixture, &["push", "-q"]);
+    run_git_in_fixture(&fixture, &["reset", "-q", "--hard", "HEAD~1"]);
+    std::fs::write(&notes_path, "local\n").unwrap();
+    run_git_in_fixture(&fixture, &["config", "merge.autoStash", "true"]);
+
+    let pull_result = pull_current_branch_fast_forward_only(&fixture);
+
+    assert!(
+        pull_result.is_err(),
+        "git refuses instead of stashing the change and re-applying it with conflicts"
+    );
+    assert_eq!(std::fs::read_to_string(&notes_path).unwrap(), "local\n");
+
+    std::fs::remove_dir_all(&fixture).unwrap();
+    std::fs::remove_dir_all(&bare_remote).unwrap();
+}
+
+#[test]
 fn pulling_a_branch_without_upstream_returns_git_reason() {
     let test_name = "pull-without-upstream";
     let (fixture, bare_remote) = create_fixture_tracking_main_on_bare_remote(test_name);

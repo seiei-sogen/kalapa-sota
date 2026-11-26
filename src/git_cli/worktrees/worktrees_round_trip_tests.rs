@@ -1,19 +1,12 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use super::{read_worktrees, resolve_worktree_root_path};
-use crate::git_cli::fixture_repository::{create_fixture_repository, run_git_in_fixture};
+use crate::git_cli::fixture_repository::{
+    create_fixture_repository, path_outside_fixture, run_git_in_fixture,
+};
 use crate::git_cli::read_repository_snapshot;
 use crate::git_cli::run_git_command::run_git_command;
 use crate::repository::{CommitId, Worktree, WorktreeCheckout, WorktreeRootPath};
-
-fn path_outside_fixture(test_name: &str, purpose: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!(
-        "kalapa-{test_name}-{purpose}-{}",
-        std::process::id()
-    ));
-    let _ = std::fs::remove_dir_all(&path);
-    path
-}
 
 // macOS の一時ディレクトリは /var の下にあり、git は /private/var で始まるパスを返すので、正規化して比べる。
 fn canonical_worktree_root_path(path: &Path) -> WorktreeRootPath {

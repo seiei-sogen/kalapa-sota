@@ -1,0 +1,112 @@
+= issue #17 ワークツリーをクリックして、ウィンドウで開く: 計画
+
+事前調査は link:preliminary-investigation.json[] にある。
+
+== 目的
+
+WORKTREES の行をクリックすると、ウィンドウがそのワークツリーを開く。
+
+終わりの条件は、次のとおり。
+
+* クリックすると、● がその行へ移り、コミット履歴、BRANCHES、CHANGES、タイトルがそのワークツリーのものになる。
+* そのあと BRANCHES の行をクリックすると、開いているワークツリーのブランチだけが切り替わる。
+* 読めないワークツリーの行をクリックすると、赤い帯にエラーが出て、● は動かない。
+* `cargo test` が通る。issue の live の 4 つと perf が通る。
+
+== 現状
+
+* `render_worktree_section` の行は、クリックもホバーも持たない。関数は `cx` を受け取らない。
+* `RepositoryWindow` は `opened_worktree_root_path`、`snapshot`、`commit_graph`、`last_git_error` を持つ。タイトルは `main.rs` が起動時に 1 度だけ決める。
+* `read_repository_snapshot` は git を 5 回呼ぶ (#16 の perf で確かめた)。
+* リスク。検証スクリプトの `git_in_repository` と `record_git_state` は、起動時のパスに対して働く。切り替えたあとの状態は `git -C <パス>` で読む。
+
+== 変更
+
+=== 1. git の前提を固定するテスト
+
+* `src/git_cli/worktrees/worktrees_round_trip_tests.rs` に、3 つのテストを足す。このファイルはいま 179 行なので、足すと 200 行を超える。足す 3 つは、新しいファイル `src/git_cli/worktrees/linked_worktree_operations_round_trip_tests.rs` に置く。fixture を作る小さな関数 (`path_outside_fixture` など) を両方が使うなら、`worktrees_round_trip_tests.rs` から `pub(super)` で借りる。`src/git_cli/worktrees/mod.rs` に足す。
+
+=== 2. `open_worktree_in_window`
+
+* `src/repository_window/open_worktree_in_window.rs` (新規): `impl RepositoryWindow` の `open_worktree_in_window(&mut self, worktree_root_path: WorktreeRootPath, window: &mut Window, cx: &mut Context<Self>)`。
+** `read_repository_snapshot(&worktree_root_path.0)` を呼ぶ。
+** 成功したら、`commit_graph`、`snapshot`、`opened_worktree_root_path` を入れ替え、`last_git_error` を `None` にし、`window.set_window_title(&repository_window_title(&self.opened_worktree_root_path))` を呼ぶ。
+** 失敗したら、`last_git_error` にエラーを入れるだけで、ほかは変えない。
+** 最後に `cx.notify()` を呼ぶ。
+* `src/repository_window/mod.rs` に足す。
+* `UnreadableHead` の行も、ほかの行と同じに扱う。読めれば開き、読めなければ git のエラーが赤い帯に出る。チェックアウトの種類では分けない。
+
+=== 3. 行のクリック
+
+* `src/repository_window/sidebar/render_worktree_section.rs`: `cx: &mut Context<RepositoryWindow>` を受け取る。行に `id` (ルートのパスの文字列)、`cursor_pointer`、ホバーの背景 (`HOVERED_ROW_BACKGROUND`)、`on_click` を付ける。`on_click` は `cx.listener` で `open_worktree_in_window` を呼ぶ。BRANCHES の行と同じ並びにする (`hover` のあとに、開いている行の背景)。
+* `src/repository_window/sidebar/render_sidebar.rs`: `cx` を渡す。
+
+=== 4. 検証スキルの文書
+
+* `SKILL.md`: `click_worktree_row` の説明から「何もしない」を消し、開くと書く。`git_in_repository` と `record_git_state` は起動時のパスに対して働き、開いているワークツリーには付いていかないことを書く。ほかのワークツリーの状態は `git -C <パス>` で読む。`doctor_kalapa.sh` のタイトルの確認も、ワークツリーを切り替えたあとは外れると書く。
+* `features/open-worktree.md` (新規): issue の live の 4 つの手順を、「Feature entry contract」の 4 つの節で書く。
+* `features/README.md`: 索引に足す。
+* `features/view-worktrees.md`: Gotchas の「クリックは何もしない」を消す。
+
+=== 5. README と要件
+
+* `README.md`: 「できること」に、ワークツリーをクリックして開くことを足す。「まだありません」の文から「一覧からほかのワークツリーを開くこと」を消す。「使い方」に「ワークツリーを開く」の節を足す。中身は、行をクリックすると開くこと、開いたあとはブランチ切り替え、ステージ、コミット、push がそのワークツリーに対して働くこと、ほかのワークツリーが使っているブランチへは git が断って赤い帯に理由が出ること、である。
+* `docs/requirements.adoc`: 「ワークツリー間の切り替え」にチェックを入れる。
+
+== テスト
+
+issue のとおり、足すテストは git の前提を固定するもので、新しいコードを書く前から通る。先に赤くはならない。`open_worktree_in_window` は `Window` と `Context` が要るので、単体テストを書かない。証拠は live と perf である。
+
+* リンクされたワークツリーのパスで `switch_local_branch` を呼ぶと、そのワークツリーの現在のブランチだけが変わる。メインのワークツリーのブランチは変わらない。
+* メインのワークツリーが使っているブランチへの `switch_local_branch` は `Err` を返し、どちらの HEAD も動かない。
+* リンクされたワークツリーのパスで読んだ `read_repository_snapshot` は、そのワークツリーのブランチを現在のブランチとし、そのワークツリーの変更だけを返す。
+
+== 確認
+
+* CI: macOS の `cargo test`。手元でも `cargo test` と、警告のない `cargo build` を通す。
+* live: issue の 4 つを、1 つの起動で続けて行う。`click_worktree_row 2`、`click_branch_row 2`、`click_branch_row 3`、`fixture-repo-detached` を消して `click_worktree_row 1`。それぞれスクリーンショットと `git -C` の出力を残す。
+* perf: `GIT_TRACE=<絶対パス>` 付きで起動し、`click_worktree_row 2` の前後で増えた `trace: built-in: git` の行を数える。5 以下なら合格とする。基準は読み直し 1 回の 5 である。
+* 既存のレシピ `view-worktrees.md` の 1 つ目と 2 つ目の手順と、`scripts/verify_on_xvfb.sh` が通る。
+* 作り直す生成物はない。`docs/images/repository-window.png` は、画面が変わらないので撮り直さない。
+
+== 範囲外
+
+* pull (#18)。
+* ワークツリーの追加、削除、ロック、prune。
+* ほかのワークツリーが使っているブランチの印。
+* コミットメッセージの入力欄と push の途中の動き。issue の「変えないこと」のとおり、手を入れない。
+* #21、#22、#23。
+
+== 計画と違うこと
+
+* コミット 2 のあと、コミット 3 までは、`cargo build` が dead code の警告を 1 つ出す。`open_worktree_in_window` を呼ぶのは、コミット 3 の行のクリックだからである。警告はコミット 3 で消える。
+* `SKILL.md` の関数の表で、`git_in_repository` の説明を「開いているリポジトリ」から「`launch_kalapa.sh` が開いたワークツリー」に直した。ワークツリーを切り替えると、「開いている」がどちらを指すか分からなくなるからである。
+* README の「ワークツリーを開く」の節に、読めないワークツリーをクリックしても元のワークツリーを開いたままになる、という 1 文を足した。issue の「作る変更」が決めている動きで、利用者が出会うからである。
+* `scripts/verify_on_xvfb.sh` は、ディスプレイを `:99` から `:95` に、`app_root` をリポジトリの絶対パスに置き換えた写しで走らせた。この作業で使ってよいディスプレイが 92 から 98 だったからである。ほかの行は変えていない。
+* live のスクリーンショット 4 枚を link:live-evidence/[] に置いた。
+* コードレビューのあと、テストの補助関数 `path_outside_fixture` を `src/git_cli/fixture_repository/path_outside_fixture.rs` へ移した。計画は `pub(super)` で借りるとしていたが、テストのファイルが隣のテストのファイルに依存する形になるからである。
+* コードレビューの指摘のうち、この PR で直さなかったものは、issue にした。`.git` を失ったワークツリーの行をクリックすると外側のワークツリーが開くこと (#25)。直すとクリック 1 回の git のプロセスが perf の上限 (5) を超えるので、所有者の判断が要る。開くのに失敗しても消えたワークツリーの行が残ること (#26)。push の途中で切り替えたときの結果の出し方は、issue #17 が「変えないこと」としているので、そのままにした。
+
+== セルフレビュー
+
+=== 1回目
+
+issue の「作る変更」の 5 項目、「見える結果」、「検証」を、計画と突き合わせた。
+
+* 見つけたこと: `worktrees_round_trip_tests.rs` はいま 179 行で、3 つのテストを足すと 200 行を超える。issue はこのファイルに足すと書くが、リポジトリの約束は 1 ファイル 200 行以内である。直したこと: 新しいテストのファイルに分けると書いた。issue の指定と違うので、PR の本文に書く。
+* 見つけたこと: `view-worktrees.md` の Gotchas と `SKILL.md` の表が「クリックは何もしない」と書いたままになる。issue の編集するファイルには `view-worktrees.md` がない。直したこと: 4 に足した。
+
+=== 2回目
+
+計画を頭から読み直し、変更が届くべき呼び出し元を見た。
+
+* 見つけたこと: `render_worktree_section` が `cx` を受け取るようになるので、呼び出し元の `render_sidebar.rs` も変わる。issue の編集するファイルにはない。直したこと: 3 に足した。
+* 見つけたこと: README の「まだありません」の文に、#16 で足した「一覧からほかのワークツリーを開くこと」が残る。直したこと: 5 に足した。
+* 見つけたこと: `UnreadableHead` の行のクリックを、#16 の記録が #17 に回している。直したこと: 2 に、ほかの行と同じに扱うと書いた。
+
+=== 3回目
+
+計画を頭から読み直し、リポジトリの約束と、前の回で直した箇所を見た。
+
+* 見つけたこと: perf の合格の条件が「基準を超えたら不合格」だけで、数がなかった。直したこと: 5 以下と書いた。
+* 命名とファイルの分け方には、直すところがなかった。`open_worktree_in_window.rs` は 1 ファイル 1 関数で、`reread_repository_snapshot.rs` と同じ形である。

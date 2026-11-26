@@ -50,6 +50,7 @@ Each feature file starts with an H1 title and one paragraph describing the user-
 ## Features
 
 - [View worktrees](./view-worktrees.md) covers the WORKTREES list, the ● on the opened worktree, and opening a linked worktree from a subdirectory.
+- [Open a worktree](./open-worktree.md) covers clicking a WORKTREES row, switching the opened worktree's branch, git refusing a branch another worktree uses, and clicking a worktree whose directory was deleted.
 - [View history](./view-history.md) covers the commit list, the branch graph, and the branch colors.
 - [Switch branch](./switch-branch.md) covers switching from the branch panel and git refusing a switch.
 - [Stage changed files](./stage-changed-files.md) covers the CHANGES list, the three checkbox states, and re-reading on return to the window.

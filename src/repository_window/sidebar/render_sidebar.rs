@@ -21,6 +21,6 @@ pub fn render_sidebar(
         .bg(rgb(PANEL_BACKGROUND))
         .border_r_1()
         .border_color(rgb(PANEL_BORDER))
-        .child(render_worktree_section(repository_window))
+        .child(render_worktree_section(repository_window, cx))
         .child(render_local_branch_section(repository_window, cx))
 }

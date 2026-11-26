@@ -1,6 +1,6 @@
 # Push the current branch
 
-The button right of **Commit** pushes the current branch to its upstream in the background. Its label shows the branch's distance from the upstream: `Publish` with no upstream, `Push ↑N`, `Push ↑N ↓M` when behind, and a dimmed `Pushing…` while running. A second click during a push is ignored. Failures show git's reason in the red banner.
+The rightmost button at the bottom pushes the current branch to its upstream in the background. Its label shows the branch's distance from the upstream: `Publish` with no upstream, `Push ↑N`, `Push ↑N ↓M` when behind, and a dimmed `Pushing…` while running. A second click during a push is ignored. Failures show git's reason in the red banner.
 
 ## Sub-features
 

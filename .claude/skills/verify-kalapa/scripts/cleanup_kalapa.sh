@@ -21,5 +21,5 @@ if [ -f "$state_file" ]; then
   done
   rm -f "$state_file"
 fi
-rm -rf "$run_dir/fixture-repo" "$run_dir/remote.git"
+rm -rf "$run_dir/fixture-repo" "$run_dir"/fixture-repo-* "$run_dir/remote.git"
 echo "evidence kept in $run_dir/evidence"

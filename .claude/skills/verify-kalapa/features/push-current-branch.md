@@ -34,4 +34,4 @@ Preconditions:
 - ssh and HTTPS remotes are out of reach on Xvfb here. Git runs without a terminal, so an ssh passphrase prompt fails instead of waiting. That path is covered only by `cargo test run_git_command` under `script -qec`.
 - The behind count comes from the last fetch or push. Fetch first, then return to the window, or the label keeps the old count.
 - Remove the pre-push hook or start from a fresh fixture after the in-progress step. Every later push waits 2 s otherwise.
-- `rm -rf "$RUN_DIR/second-clone"` after the behind step. `cleanup_kalapa.sh` removes only the fixture and the bare remote.
+- `rm -rf "$RUN_DIR/second-clone"` after the behind step. `cleanup_kalapa.sh` removes only the fixture, its linked worktrees, and the bare remote.

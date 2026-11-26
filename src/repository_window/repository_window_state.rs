@@ -1,14 +1,12 @@
-use std::path::PathBuf;
-
 use gpui::Entity;
 
 use crate::commit_graph::CommitGraphLayout;
 use crate::git_cli::GitCommandError;
-use crate::repository::RepositorySnapshot;
+use crate::repository::{RepositorySnapshot, WorktreeRootPath};
 use crate::single_line_text_input::SingleLineTextInput;
 
 pub struct RepositoryWindow {
-    pub repository_path: PathBuf,
+    pub opened_worktree_root_path: WorktreeRootPath,
     pub snapshot: RepositorySnapshot,
     /// snapshot.commits から作る。snapshot と一緒にしか入れ替えない。
     pub commit_graph: CommitGraphLayout,

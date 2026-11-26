@@ -6,6 +6,7 @@ mod local_branches;
 mod read_commit_history;
 mod read_repository_snapshot;
 mod run_git_command;
+mod worktrees;
 
 #[cfg(test)]
 mod fixture_repository;
@@ -18,3 +19,4 @@ pub use changed_files::{commit_staged_changes, toggle_changed_file_in_commit};
 pub use git_command_error::GitCommandError;
 pub use local_branches::{push_current_branch, switch_local_branch};
 pub use read_repository_snapshot::read_repository_snapshot;
+pub use worktrees::resolve_worktree_root_path;

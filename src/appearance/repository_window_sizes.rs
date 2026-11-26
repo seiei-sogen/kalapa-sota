@@ -1,5 +1,5 @@
 pub const ROW_HEIGHT: f32 = 26.;
-pub const BRANCH_PANEL_WIDTH: f32 = 220.;
+pub const SIDEBAR_WIDTH: f32 = 220.;
 pub const GRAPH_LANE_WIDTH: f32 = 16.;
 pub const GRAPH_LINE_WIDTH: f32 = 2.;
 pub const COMMIT_DOT_RADIUS: f32 = 4.;

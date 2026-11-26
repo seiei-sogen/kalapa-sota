@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# 検証用のリポジトリと bare リモートを <run-dir> に作る。日付と作者を固定するので、毎回同じ履歴になる。
+# 検証用のリポジトリ、そのリンクされたワークツリー 2 つ、bare リモートを <run-dir> に作る。日付と作者を固定するので、毎回同じ履歴になる。
 # 使い方: create_fixture_repository.sh <run-dir>
 set -euo pipefail
 
 run_dir=$(realpath -m "${1:?run-dir を指定する}")
 fixture="$run_dir/fixture-repo"
 remote="$run_dir/remote.git"
-rm -rf "$fixture" "$remote"
+# 前の run のワークツリーが残っていると、git worktree add が already exists で失敗する。
+rm -rf "$fixture" "$run_dir"/fixture-repo-* "$remote"
 mkdir -p "$fixture"
 
 git_in_fixture() { git -C "$fixture" "$@"; }
@@ -40,6 +41,12 @@ git_in_fixture switch -q main
 git init -q --bare "$remote"
 git_in_fixture remote add origin "$remote"
 git_in_fixture push -q -u origin main 2>/dev/null
+
+# 既存のブランチをワークツリーに入れると、fixture-repo でそのブランチへ切り替えるレシピが壊れる。
+git_in_fixture worktree add -q --detach "$run_dir/fixture-repo-detached" main
+git_in_fixture worktree add -q -b worktree-review "$run_dir/fixture-repo-worktree-review" main
+mkdir -p "$run_dir/fixture-repo-worktree-review/sub"
+printf 'review\n' > "$run_dir/fixture-repo-worktree-review/sub/only-in-worktree-review.txt"
 
 printf 'Usage\n' >> "$fixture/README.md"
 printf -- '- staged entry\n' >> "$fixture/CHANGELOG.md"

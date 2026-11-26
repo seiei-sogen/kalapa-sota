@@ -50,6 +50,7 @@ This defines the following functions in the current shell.
 
 | Function | Action |
 | --- | --- |
+| `click_worktree_row <i>` | Click the i-th worktree in WORKTREES (0-based, `git worktree list` order, main worktree first). The click does nothing yet. |
 | `click_branch_row <i>` | Click the i-th branch in BRANCHES (0-based, sorted by name). |
 | `click_changed_file_row <i>` | Click the i-th row in CHANGES (0-based, `git status --porcelain` order, untracked last). |
 | `click_commit_message_input` | Click the message input. This focuses it. |
@@ -80,4 +81,4 @@ Everything goes to `$RUN_DIR/evidence/`. The app's stdout and stderr are there a
 "$SCRIPTS/cleanup_kalapa.sh" "$RUN_DIR"
 ```
 
-It stops only the kalapa and Xvfb PIDs recorded in `state.env`. It deletes the fixture and the bare remote and keeps `$RUN_DIR/evidence/`. Run it after every failed attempt too, so no process or display is left behind.
+It stops only the kalapa and Xvfb PIDs recorded in `state.env`. It deletes the fixture, its linked worktrees, and the bare remote, and keeps `$RUN_DIR/evidence/`. Run it after every failed attempt too, so no process or display is left behind.

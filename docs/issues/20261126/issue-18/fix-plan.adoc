@@ -94,6 +94,18 @@ fixture は `create_fixture_repository` と `path_outside_fixture` で作る。�
 * `scripts/verify_on_xvfb.sh` が確かめる範囲を広げること。
 * #21、#22、#23、#25。
 
+== 計画と違うこと
+
+* コミット 1 の `run_remote_operation_in_background.rs` は、シグネチャの折り返しと `match` で行が増え、元のファイルとの似ている度合いが 44% になった。git の既定 (50%) では改名と見なされず、削除と追加に見える。rustfmt に合わない `update` の呼び出しの形は、元のまま残した。
+* `pull_current_branch_fast_forward_only` には、`--no-rebase` のほかに、`advice.diverging=false` の理由も 1 行のコメントに書いた。何のための設定か、コードからは分からないからである。
+* ラウンドトリップのテストは、`Err` に加えて、赤い帯に出る git の理由の一部 (`Not possible to fast-forward`、`no tracking information`) も確かめる。
+* `features/push-current-branch.md` の「The button right of **Commit**」を、右端のボタンに直した。issue の編集するファイルにはないが、*Pull* が間に入って正しくなくなるからである。
+* README には、計画の 5 か所のほかに、次を足した。取り込むコミットが未コミットの変更のあるファイルを触ると git が断ること。取り込んでいないコミットの数は *Push* の ↓ に出ること。「制限」の ssh の行で、失敗するのを push や pull にしたこと。
+* `features/pull-current-branch.md` のリンクされたワークツリーの手順は、`click_worktree_row 2` ではなく、`fixture-repo-worktree-review` を渡して新しく起動する。前の手順の `remote.origin.uploadpack` と `pre-push` フックは共有の `.git` にあり、ほかのワークツリーにも効くからである。
+* `scripts/verify_on_xvfb.sh` は、ディスプレイを `:99` から `:94` に、`app_root` をリポジトリの絶対パスに置き換えた写しで走らせた。この作業で使ってよいディスプレイが 92 から 98 だったからである。
+* perf は、最初の `leave_and_return_to_window` で 10 行、2 回目と 3 回目で 5 行ずつ増えた。読み直し 1 回は、どれも 5 である。
+* live のスクリーンショット 4 枚を link:live-evidence/[] に置いた。
+
 == セルフレビュー
 
 === 1回目

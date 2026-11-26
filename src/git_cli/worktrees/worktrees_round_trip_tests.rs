@@ -6,7 +6,7 @@ use crate::git_cli::read_repository_snapshot;
 use crate::git_cli::run_git_command::run_git_command;
 use crate::repository::{CommitId, Worktree, WorktreeCheckout, WorktreeRootPath};
 
-fn path_outside_fixture(test_name: &str, purpose: &str) -> PathBuf {
+pub(super) fn path_outside_fixture(test_name: &str, purpose: &str) -> PathBuf {
     let path = std::env::temp_dir().join(format!(
         "kalapa-{test_name}-{purpose}-{}",
         std::process::id()
